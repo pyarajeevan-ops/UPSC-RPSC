@@ -1,0 +1,6 @@
+{
+  "name": "Margdarshak CSE & RAS Mentor",
+  "description": "Integrated UPSC CSE Prelims and RPSC RAS Prelims mentor, syllabus-driven dual roadmap, PYQ-oriented evaluator, and spaced revision coach.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

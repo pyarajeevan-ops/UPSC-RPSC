@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Margdarshak CSE & RAS Mentor</title>
+    <meta name="description" content="Integrated UPSC CSE Prelims and RPSC RAS Prelims mentor, syllabus-driven dual roadmap, PYQ-oriented evaluator, and spaced revision coach." />
+    <meta property="og:title" content="Margdarshak CSE & RAS Mentor" />
+    <meta property="og:description" content="Integrated UPSC CSE Prelims and RPSC RAS Prelims mentor, syllabus-driven dual roadmap, PYQ-oriented evaluator, and spaced revision coach." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      // Suppress Vite HMR websocket disconnection errors in AI Studio iframe environment
+      (function() {
+        function isWsError(err) {
+          if (!err) return false;
+          const msg = typeof err === 'string' ? err : (err.message || String(err));
+          return (
+            msg.includes('WebSocket') ||
+            msg.includes('websocket') ||
+            msg.includes('closed without opened') ||
+            msg.includes('failed to connect')
+          );
+        }
+
+        window.addEventListener('unhandledrejection', function(event) {
+          if (isWsError(event.reason)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        }, true);
+
+        window.addEventListener('error', function(event) {
+          if (isWsError(event.message) || isWsError(event.error)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        }, true);
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-slate-950 text-slate-100 antialiased font-sans selection:bg-amber-500/30 selection:text-amber-200">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
