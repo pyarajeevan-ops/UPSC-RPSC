@@ -23,7 +23,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const navItems = [
     { id: 'dashboard', label: 'Roadmap', icon: Compass },
-    { id: 'syllabus', label: '12-Step Syllabus', icon: BookOpen },
+    { id: 'syllabus', label: 'Complete Syllabus', icon: BookOpen },
     { id: 'test-mode', label: 'Test Mode', icon: Award },
     { id: 'mentor', label: 'Mentor AI', icon: BrainCircuit },
     { id: 'mistakes', label: `Error Log (${mistakeCount})`, icon: BookmarkCheck },

@@ -24,6 +24,8 @@ import { GoalReachedNotification } from './GoalReachedNotification';
 import { FocusTimer } from './FocusTimer';
 import { ConsistentAspirantStreak, calculateStreakStats } from './ConsistentAspirantStreak';
 import { WeeklyPerformanceReport } from './WeeklyPerformanceReport';
+import { TodayStudyHoursSummary } from './TodayStudyHoursSummary';
+import { DailySessionNotes } from './DailySessionNotes';
 
 interface DashboardViewProps {
   userProfile: UserProfile;
@@ -37,6 +39,7 @@ interface DashboardViewProps {
   dayLogs: DayStudyLog[];
   onUpdateTodayLog: (common: number, rajasthan: number, test: number) => void;
   onUpdateDailyGoal: (newGoalHours: number) => void;
+  onUpdateTodayNotes?: (notesData: { focusArea?: string; challenges?: string; notes?: string }) => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -51,6 +54,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   dayLogs,
   onUpdateTodayLog,
   onUpdateDailyGoal,
+  onUpdateTodayNotes,
 }) => {
   const commonHours = (userProfile.studyHours * 0.7).toFixed(1);
   const rajasthanHours = (userProfile.studyHours * 0.2).toFixed(1);
@@ -150,6 +154,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
+      {/* Visual Summary: Total Study Hours Logged Today vs Daily Target Goal with Progress Bar & Congratulatory Message */}
+      <TodayStudyHoursSummary
+        userProfile={userProfile}
+        todayLog={todayLog}
+        onUpdateTodayLog={onUpdateTodayLog}
+      />
+
+      {/* Daily Study Log Notes: Specific focus area, challenges encountered & active takeaways */}
+      <DailySessionNotes
+        todayLog={todayLog}
+        dayLogs={dayLogs}
+        userProfile={userProfile}
+        onUpdateNotes={onUpdateTodayNotes || (() => {})}
+      />
+
       {/* New UI Section: Daily Study Goal Configuration & Circular Progress Indicator */}
       <DailyGoalSection
         userProfile={userProfile}
@@ -191,7 +210,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Margdarshak 70-20-10 Preparation Architecture */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
             <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
               <Layers className="w-5 h-5 text-amber-400" />
@@ -201,6 +220,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               Scientific workload distribution balancing UPSC conceptual rigor and RPSC factual precision
             </p>
           </div>
+
+          <button
+            onClick={() => onSelectTab('syllabus')}
+            className="px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto shrink-0 shadow-xs"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+            <span>Open Complete Syllabus Directory</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

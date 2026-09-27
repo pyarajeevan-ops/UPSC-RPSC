@@ -143,4 +143,7 @@ export interface DayStudyLog {
   loggedRajasthanHours: number;
   loggedTestHours: number;
   completedTopicIds: string[];
+  focusArea?: string;
+  challenges?: string;
+  notes?: string;
 }

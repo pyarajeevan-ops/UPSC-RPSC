@@ -152,6 +152,26 @@ export const DailyGoalSection: React.FC<DailyGoalSectionProps> = ({
               )}
             </p>
 
+            {/* Horizontal Progress Bar */}
+            <div className="w-full max-w-sm space-y-1 pt-1">
+              <div className="flex items-center justify-between text-[11px] text-slate-400">
+                <span>Progress: {todayActualHours}h of {currentGoal}h goal</span>
+                <span className={`font-semibold ${isGoalMet ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {Math.round(rawPercentage)}%
+                </span>
+              </div>
+              <div className="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    isGoalMet
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-sm shadow-emerald-500/50'
+                      : 'bg-gradient-to-r from-amber-500 to-amber-300'
+                  }`}
+                  style={{ width: `${clampedPercentage}%` }}
+                />
+              </div>
+            </div>
+
             <div className="pt-2 flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs">
               <span className="text-slate-400 text-[11px]">Quick Log:</span>
               <button

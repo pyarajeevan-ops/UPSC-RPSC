@@ -75,7 +75,17 @@ export default function App() {
       { date: '2026-09-23', dayLabel: 'Thu', loggedCommonHours: 5.6, loggedRajasthanHours: 1.6, loggedTestHours: 0.8, completedTopicIds: [] },
       { date: '2026-09-24', dayLabel: 'Fri', loggedCommonHours: 6.2, loggedRajasthanHours: 1.5, loggedTestHours: 0.9, completedTopicIds: [] },
       { date: '2026-09-25', dayLabel: 'Sat', loggedCommonHours: 4.8, loggedRajasthanHours: 2.0, loggedTestHours: 1.2, completedTopicIds: [] },
-      { date: '2026-09-26', dayLabel: 'Today', loggedCommonHours: 4.5, loggedRajasthanHours: 1.5, loggedTestHours: 0.8, completedTopicIds: ['panchayati-raj-local-gov'] },
+      {
+        date: '2026-09-26',
+        dayLabel: 'Today',
+        loggedCommonHours: 4.5,
+        loggedRajasthanHours: 1.5,
+        loggedTestHours: 0.8,
+        completedTopicIds: ['panchayati-raj-local-gov'],
+        focusArea: 'Panchayati Raj & State Election Commission (73rd Amendment)',
+        challenges: 'Distinguishing Article 243K removal procedure (High Court Judge parity) vs appointment by Governor.',
+        notes: 'Completed core Laxmikanth reading + 25 PYQs. Focus on Rajasthan 5-tier local governance structure tomorrow.',
+      },
     ];
   });
 
@@ -151,6 +161,20 @@ export default function App() {
     });
   };
 
+  const handleUpdateTodayNotes = (notesData: { focusArea?: string; challenges?: string; notes?: string }) => {
+    setDayLogs((prev) => {
+      const updated = [...prev];
+      const lastIndex = updated.length - 1;
+      if (lastIndex >= 0) {
+        updated[lastIndex] = {
+          ...updated[lastIndex],
+          ...notesData,
+        };
+      }
+      return updated;
+    });
+  };
+
   const handleUpdateDailyGoal = (newGoalHours: number) => {
     setUserProfile((prev) => ({
       ...prev,
@@ -199,6 +223,7 @@ export default function App() {
             dayLogs={dayLogs}
             onUpdateTodayLog={handleUpdateTodayLog}
             onUpdateDailyGoal={handleUpdateDailyGoal}
+            onUpdateTodayNotes={handleUpdateTodayNotes}
           />
         )}
 

@@ -13,9 +13,14 @@ import {
   ShieldAlert,
   Clock,
   Send,
-  Loader2
+  Loader2,
+  Compass,
+  FolderTree
 } from 'lucide-react';
 import { TopicLesson, ContentTag, LanguageMedium, PracticeQuestion } from '../types';
+import { CompleteSyllabusExplorer } from './CompleteSyllabusExplorer';
+import { SyllabusTopSearchBar } from './SyllabusTopSearchBar';
+import { SyllabusTopicItem } from '../data/completeSyllabusData';
 
 interface SyllabusExplorerViewProps {
   topics: TopicLesson[];
@@ -46,6 +51,11 @@ export const SyllabusExplorerView: React.FC<SyllabusExplorerViewProps> = ({
   onSelectTopicId,
   language,
 }) => {
+  const [viewMode, setViewMode] = useState<'DIRECTORY' | 'MASTERCLASS'>('DIRECTORY');
+  const [globalSearchQuery, setGlobalSearchQuery] = useState<string>('');
+  const [activeExternalTopic, setActiveExternalTopic] = useState<SyllabusTopicItem | null>(null);
+  const [selectedExamId, setSelectedExamId] = useState<'UPSC_CSE' | 'RPSC_RAS'>('UPSC_CSE');
+
   const [filterTag, setFilterTag] = useState<string>('ALL');
   const [activeStep, setActiveStep] = useState<number>(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
@@ -61,8 +71,20 @@ export const SyllabusExplorerView: React.FC<SyllabusExplorerViewProps> = ({
   const currentTopic = allTopics.find((t) => t.id === selectedTopicId) || allTopics[0];
 
   const filteredTopics = allTopics.filter((t) => {
-    if (filterTag === 'ALL') return true;
-    return t.tags.includes(filterTag as ContentTag);
+    if (filterTag !== 'ALL' && !t.tags.includes(filterTag as ContentTag)) {
+      return false;
+    }
+    if (globalSearchQuery.trim().length > 0) {
+      const q = globalSearchQuery.toLowerCase();
+      return (
+        t.title.toLowerCase().includes(q) ||
+        t.titleHindi.toLowerCase().includes(q) ||
+        t.subject.toLowerCase().includes(q) ||
+        t.upscRpscOverlap.toLowerCase().includes(q) ||
+        t.coreConcept.toLowerCase().includes(q)
+      );
+    }
+    return true;
   });
 
   const handleSelectOption = (questionId: string, optionLetter: string) => {
@@ -101,6 +123,7 @@ export const SyllabusExplorerView: React.FC<SyllabusExplorerViewProps> = ({
         onSelectTopicId(newLesson.id);
         setActiveStep(0);
         setCustomTopicInput('');
+        setViewMode('MASTERCLASS');
       }
     } catch (err) {
       console.error('Failed to generate deep dive:', err);
@@ -111,8 +134,86 @@ export const SyllabusExplorerView: React.FC<SyllabusExplorerViewProps> = ({
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Top Controls: Filter Tags & Custom Topic Generator */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 bg-slate-900/60 p-4 border border-slate-800 rounded-xl">
+      {/* Universal Integrated Syllabus Search Bar */}
+      <SyllabusTopSearchBar
+        searchQuery={globalSearchQuery}
+        onSearchChange={setGlobalSearchQuery}
+        masterclassTopics={allTopics}
+        onSelectMasterclassLesson={(lessonId) => {
+          onSelectTopicId(lessonId);
+          setViewMode('MASTERCLASS');
+        }}
+        onSelectSyllabusTopic={(topic, examId) => {
+          setSelectedExamId(examId);
+          setActiveExternalTopic(topic);
+          setViewMode('DIRECTORY');
+        }}
+        onViewAllInDirectory={() => {
+          setViewMode('DIRECTORY');
+        }}
+      />
+
+      {/* Primary Top View Mode Navigation: Full Directory vs 12-Step Masterclass */}
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-xl w-full sm:w-auto">
+          <button
+            onClick={() => setViewMode('DIRECTORY')}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              viewMode === 'DIRECTORY'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <FolderTree className="w-4 h-4" />
+            <span>Full Syllabus Directory (UPSC & RPSC)</span>
+          </button>
+
+          <button
+            onClick={() => setViewMode('MASTERCLASS')}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              viewMode === 'MASTERCLASS'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>12-Step Pedagogical Lessons</span>
+            {globalSearchQuery.trim() && (
+              <span className="px-1.5 py-0.2 bg-slate-900 text-[10px] rounded text-amber-300 font-bold">
+                {filteredTopics.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        <div className="text-xs text-slate-400 hidden md:flex items-center gap-2 pr-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+          <span>Interactive multi-tier drill-down with official notified topics</span>
+        </div>
+      </div>
+
+      {/* View Mode 1: Comprehensive Multi-Level Syllabus Explorer */}
+      {viewMode === 'DIRECTORY' && (
+        <CompleteSyllabusExplorer
+          language={language}
+          onSelectTopicLesson={(lessonId) => {
+            onSelectTopicId(lessonId);
+            setViewMode('MASTERCLASS');
+          }}
+          externalSearchQuery={globalSearchQuery}
+          onSearchQueryChange={setGlobalSearchQuery}
+          externalDeepDiveTopic={activeExternalTopic}
+          onCloseExternalDeepDive={() => setActiveExternalTopic(null)}
+          selectedExamId={selectedExamId}
+          onSelectExamId={setSelectedExamId}
+        />
+      )}
+
+      {/* View Mode 2: Guided 12-Step Topic Masterclasses */}
+      {viewMode === 'MASTERCLASS' && (
+        <div className="space-y-6">
+          {/* Top Controls: Filter Tags & Custom Topic Generator */}
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 bg-slate-900/60 p-4 border border-slate-800 rounded-xl">
         {/* Filter Segmented Control */}
         <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-950 rounded-lg text-xs">
           {['ALL', 'COMMON', 'RPSC EXTRA', 'UPSC EXTRA', 'HIGH PRIORITY', 'CURRENT'].map((tag) => (
@@ -596,6 +697,8 @@ export const SyllabusExplorerView: React.FC<SyllabusExplorerViewProps> = ({
           </div>
         </div>
       </div>
+        </div>
+      )}
     </div>
   );
 };
