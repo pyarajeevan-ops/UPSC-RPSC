@@ -7,7 +7,11 @@ import { MentorChatView } from './components/MentorChatView';
 import { MistakeNotebookView } from './components/MistakeNotebookView';
 import { SpacedRevisionView } from './components/SpacedRevisionView';
 import { RajasthanVaultView } from './components/RajasthanVaultView';
+import { SelfTeachCurriculum } from './components/SelfTeachCurriculum';
+import { StudyCalendarView } from './components/StudyCalendarView';
 import { DiagnosticModal } from './components/DiagnosticModal';
+import { CommandPalette } from './components/CommandPalette';
+import { ArrowLeft, Keyboard, HelpCircle, X, Compass, GraduationCap, BookOpen, Calendar, Award, BrainCircuit } from 'lucide-react';
 import { UserProfile, LanguageMedium, ErrorLogEntry, DayStudyLog } from './types';
 import { SYLLABUS_TOPICS } from './data/mockSyllabus';
 
@@ -44,6 +48,118 @@ export default function App() {
   const [isDiagnosticOpen, setIsDiagnosticOpen] = useState<boolean>(() => {
     return !userProfile.isDiagnosticComplete;
   });
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
+  const [tabHistory, setTabHistory] = useState<string[]>([]);
+
+  // Smooth Navigation: transition to tab while tracking history
+  const navigateToTab = (newTab: string) => {
+    if (newTab !== activeTab) {
+      setTabHistory((prev) => [...prev.slice(-10), activeTab]);
+      setActiveTab(newTab);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleGoBack = () => {
+    if (tabHistory.length > 0) {
+      const prev = tabHistory[tabHistory.length - 1];
+      setTabHistory((old) => old.slice(0, -1));
+      setActiveTab(prev);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      setActiveTab('dashboard');
+    }
+  };
+
+  // Global Keyboard Shortcuts for ultra-smooth app navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is currently typing in an input, textarea, select or contenteditable
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      // Command palette: Ctrl+K or Cmd+K
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+        return;
+      }
+
+      // Alt + Left Arrow for Back
+      if (e.altKey && e.key === 'ArrowLeft') {
+        e.preventDefault();
+        handleGoBack();
+        return;
+      }
+
+      // Number keys for instant tab switching
+      switch (e.key) {
+        case '1':
+          e.preventDefault();
+          navigateToTab('dashboard');
+          break;
+        case '2':
+          e.preventDefault();
+          navigateToTab('curriculum');
+          break;
+        case '3':
+          e.preventDefault();
+          navigateToTab('syllabus');
+          break;
+        case '4':
+          e.preventDefault();
+          navigateToTab('calendar');
+          break;
+        case '5':
+          e.preventDefault();
+          navigateToTab('test-mode');
+          break;
+        case '6':
+          e.preventDefault();
+          navigateToTab('mentor');
+          break;
+        case '7':
+          e.preventDefault();
+          navigateToTab('mistakes');
+          break;
+        case '8':
+          e.preventDefault();
+          navigateToTab('revision');
+          break;
+        case '9':
+          e.preventDefault();
+          navigateToTab('rajasthan-vault');
+          break;
+        case 'c':
+        case 'C':
+          e.preventDefault();
+          navigateToTab('calendar');
+          break;
+        case '?':
+          e.preventDefault();
+          setIsShortcutsOpen((prev) => !prev);
+          break;
+        case 'Escape':
+          if (isShortcutsOpen) {
+            e.preventDefault();
+            setIsShortcutsOpen(false);
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeTab, tabHistory, isShortcutsOpen]);
 
   // Completed syllabus topic IDs
   const [completedTopicIds, setCompletedTopicIds] = useState<string[]>(() => {
@@ -200,12 +316,13 @@ export default function App() {
       {/* 3-Zone Navigation Header */}
       <Navbar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={navigateToTab}
         language={language}
         setLanguage={setLanguage}
         userProfile={userProfile}
         onOpenDiagnostic={() => setIsDiagnosticOpen(true)}
         mistakeCount={mistakes.length}
+        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
       />
 
       {/* Main Study Sanctum Canvas */}
@@ -214,7 +331,7 @@ export default function App() {
           <DashboardView
             userProfile={userProfile}
             onOpenDiagnostic={() => setIsDiagnosticOpen(true)}
-            onSelectTab={setActiveTab}
+            onSelectTab={navigateToTab}
             onSelectTopic={handleSelectTopicFromDashboard}
             mistakeCount={mistakes.length}
             language={language}
@@ -227,12 +344,47 @@ export default function App() {
           />
         )}
 
+        {activeTab === 'curriculum' && (
+          <SelfTeachCurriculum
+            language={language}
+            userProfile={userProfile}
+            onSelectTopicLesson={(lessonId) => {
+              setSelectedTopicId(lessonId);
+              navigateToTab('syllabus');
+            }}
+            onOpenSyllabusTopic={() => {
+              navigateToTab('syllabus');
+            }}
+            onOpenCalendar={() => {
+              navigateToTab('calendar');
+            }}
+            onOpenTestMode={() => {
+              navigateToTab('test-mode');
+            }}
+          />
+        )}
+
         {activeTab === 'syllabus' && (
           <SyllabusExplorerView
             topics={SYLLABUS_TOPICS}
             selectedTopicId={selectedTopicId}
             onSelectTopicId={setSelectedTopicId}
             language={language}
+            userProfile={userProfile}
+          />
+        )}
+
+        {activeTab === 'calendar' && (
+          <StudyCalendarView
+            language={language}
+            userProfile={userProfile}
+            onSelectTopic={(topicId) => {
+              setSelectedTopicId(topicId);
+              navigateToTab('syllabus');
+            }}
+            onStartPractice={() => {
+              navigateToTab('test-mode');
+            }}
           />
         )}
 
@@ -268,12 +420,142 @@ export default function App() {
         )}
       </main>
 
+      {/* Floating Smooth Navigation Pill & Back History Bar */}
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-950/90 backdrop-blur-md border border-slate-800 shadow-2xl text-xs">
+        {tabHistory.length > 0 && (
+          <button
+            onClick={handleGoBack}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-amber-300 font-semibold transition-colors cursor-pointer group"
+            title="Go back to previous view (Alt + ←)"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+            <span className="capitalize">{tabHistory[tabHistory.length - 1]}</span>
+          </button>
+        )}
+
+        <div className="h-3.5 w-px bg-slate-800 mx-0.5" />
+
+        <button
+          onClick={() => setIsCommandPaletteOpen(true)}
+          className="flex items-center gap-1 px-2 py-1 rounded-full text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+          title="Search / Jump to view (⌘K)"
+        >
+          <span className="text-[11px] font-mono">⌘K</span>
+        </button>
+
+        <button
+          onClick={() => setIsShortcutsOpen(true)}
+          className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer"
+          title="Keyboard Navigation Shortcuts (?)"
+        >
+          <Keyboard className="w-3.5 h-3.5 text-amber-400/80" />
+          <span className="text-[11px] hidden sm:inline">Shortcuts</span>
+        </button>
+      </div>
+
+      {/* Keyboard Shortcuts Cheat Sheet Modal */}
+      {isShortcutsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/50">
+              <div className="flex items-center gap-2 font-serif text-base font-bold text-slate-100">
+                <Keyboard className="w-5 h-5 text-amber-400" />
+                <span>Instant Navigation Shortcuts</span>
+              </div>
+              <button
+                onClick={() => setIsShortcutsOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <p className="text-xs text-slate-400">
+                Navigate between all Civil Services modules with single keystrokes without touching the mouse:
+              </p>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-300">Roadmap</span>
+                  <kbd className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-amber-300 font-mono text-[11px]">1</kbd>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-300">Curriculum</span>
+                  <kbd className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-amber-300 font-mono text-[11px]">2</kbd>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-300">Syllabus Directory</span>
+                  <kbd className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-amber-300 font-mono text-[11px]">3</kbd>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span className="text-amber-300 font-medium">Study Calendar</span>
+                  <kbd className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-amber-300 font-mono text-[11px]">4 or C</kbd>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-300">Test Simulator</span>
+                  <kbd className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-amber-300 font-mono text-[11px]">5</kbd>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-300">Mentor AI</span>
+                  <kbd className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-amber-300 font-mono text-[11px]">6</kbd>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-300">Error Log</span>
+                  <kbd className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-amber-300 font-mono text-[11px]">7</kbd>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-300">5-3-2-1-1 Recall</span>
+                  <kbd className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-amber-300 font-mono text-[11px]">8</kbd>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-300">Rajasthan Layer</span>
+                  <kbd className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-amber-300 font-mono text-[11px]">9</kbd>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-300">Previous View</span>
+                  <kbd className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-amber-300 font-mono text-[11px]">Alt+←</kbd>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+                <span className="text-slate-300">Quick Command Palette</span>
+                <kbd className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-amber-300 font-mono text-[11px]">⌘K or Ctrl+K</kbd>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  onClick={() => setIsShortcutsOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs transition-colors cursor-pointer"
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Aspirant Diagnostic Intake Modal */}
       <DiagnosticModal
         isOpen={isDiagnosticOpen}
         onClose={() => setIsDiagnosticOpen(false)}
         currentProfile={userProfile}
         onSaveProfile={(updated) => setUserProfile(updated)}
+      />
+
+      {/* Global Command Palette & Fast Navigation Modal (Ctrl+K or Cmd+K) */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onSelectTab={(tab) => setActiveTab(tab)}
+        onSelectSyllabusTopic={(topicId) => {
+          setSelectedTopicId(topicId);
+          setActiveTab('syllabus');
+        }}
+        language={language}
+        setLanguage={setLanguage}
+        onOpenDiagnostic={() => setIsDiagnosticOpen(true)}
       />
 
       {/* Scholarly Minimal Footer */}

@@ -12,7 +12,8 @@ import {
   Filter,
   BarChart3,
   Flag,
-  Sparkles
+  Sparkles,
+  Calendar
 } from 'lucide-react';
 import { PracticeQuestion, ErrorCategory, ErrorLogEntry, LanguageMedium } from '../types';
 import { COMPREHENSIVE_QUESTIONS_BANK } from '../data/questionsBank';
@@ -41,6 +42,30 @@ export const TestModeView: React.FC<TestModeViewProps> = ({ onAddMistake, langua
   // Post Test Review & Error Tagging States
   const [taggedErrors, setTaggedErrors] = useState<Record<string, ErrorCategory>>({});
   const [savedMistakes, setSavedMistakes] = useState<Record<string, boolean>>({});
+  const [scheduledCalendar, setScheduledCalendar] = useState<boolean>(false);
+  const [calendarToast, setCalendarToast] = useState<string | null>(null);
+
+  const handleScheduleMistakeAutopsy = async (incorrectCount: number) => {
+    try {
+      setScheduledCalendar(true);
+      const res = await fetch('/api/calendar/auto-schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'mistake-review',
+          count: incorrectCount || 1,
+          examTag: selectedMode,
+          subject: `${selectedMode} Test Diagnostics`,
+        }),
+      });
+      if (res.ok) {
+        setCalendarToast('Error Autopsy & 3-Day Test Retake scheduled in Study Calendar!');
+        setTimeout(() => setCalendarToast(null), 4500);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   // Countdown timer
   useEffect(() => {
@@ -467,17 +492,39 @@ export const TestModeView: React.FC<TestModeViewProps> = ({ onAddMistake, langua
                       </h2>
                     </div>
 
-                    <button
-                      onClick={() => {
-                        setTestStarted(false);
-                        setTestFinished(false);
-                      }}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>Take Another Test</span>
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={() => handleScheduleMistakeAutopsy(results.incorrect)}
+                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer border ${
+                          scheduledCalendar
+                            ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                            : 'bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border-purple-500/30'
+                        }`}
+                        title="Schedule Error Autopsy for tomorrow and 3-Day Test Retake in Study Calendar"
+                      >
+                        <Calendar className="w-3.5 h-3.5 text-purple-400" />
+                        <span>{scheduledCalendar ? 'Autopsy Scheduled ✓' : 'Schedule Error Autopsy in Calendar'}</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setTestStarted(false);
+                          setTestFinished(false);
+                        }}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Take Another Test</span>
+                      </button>
+                    </div>
                   </div>
+
+                  {calendarToast && (
+                    <div className="mt-4 p-3 bg-purple-950/60 border border-purple-500/40 rounded-xl text-xs text-purple-200 flex items-center gap-2 animate-fade-in">
+                      <Calendar className="w-4 h-4 text-purple-400 shrink-0" />
+                      <span>{calendarToast}</span>
+                    </div>
+                  )}
 
                   {/* Summary Metric Cards */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">

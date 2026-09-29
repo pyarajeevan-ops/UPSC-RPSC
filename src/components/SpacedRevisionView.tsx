@@ -10,15 +10,41 @@ import {
   RotateCcw,
   Layers,
   ChevronRight,
-  BookOpen
+  BookOpen,
+  Calendar
 } from 'lucide-react';
 import { SYLLABUS_TOPICS } from '../data/mockSyllabus';
 
 export const SpacedRevisionView: React.FC = () => {
   const [selectedTopicIndex, setSelectedTopicIndex] = useState(0);
   const [revealedSections, setRevealedSections] = useState<Record<string, boolean>>({});
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const topic = SYLLABUS_TOPICS[selectedTopicIndex] || SYLLABUS_TOPICS[0];
+
+  const handleScheduleRecallInCalendar = async () => {
+    try {
+      setIsScheduled(true);
+      const res = await fetch('/api/calendar/auto-schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'spaced-revision',
+          topicId: topic.id,
+          topicTitle: topic.title,
+          subject: topic.subject,
+          examTag: 'DUAL',
+        }),
+      });
+      if (res.ok) {
+        setToastMessage(`Day 1, 3, 7, 15, 30 Spaced Revisions scheduled in Study Calendar for "${topic.title}"!`);
+        setTimeout(() => setToastMessage(null), 4500);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const toggleReveal = (sectionKey: string) => {
     setRevealedSections((prev) => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
@@ -40,6 +66,14 @@ export const SpacedRevisionView: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12 max-w-5xl mx-auto">
+      {/* Toast Notification Banner */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl bg-purple-500 text-slate-950 font-semibold shadow-2xl border border-purple-400 text-xs animate-fade-in">
+          <Calendar className="w-4 h-4 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
         <div>
@@ -52,7 +86,20 @@ export const SpacedRevisionView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleScheduleRecallInCalendar}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border ${
+              isScheduled
+                ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                : 'bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border-purple-500/30'
+            }`}
+            title="Schedule 1d, 3d, 7d, 15d, 30d review checkpoints for this topic into your Study Calendar"
+          >
+            <Calendar className="w-3.5 h-3.5 text-purple-400" />
+            <span>{isScheduled ? 'Scheduled in Calendar ✓' : 'Schedule 5-3-2-1-1 in Calendar'}</span>
+          </button>
+
           <button
             onClick={handleHideAll}
             className="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"

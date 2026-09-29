@@ -15,6 +15,10 @@ import {
   ShieldCheck,
   AlertTriangle,
   Flame,
+  GraduationCap,
+  Calendar,
+  CalendarCheck,
+  Library,
 } from 'lucide-react';
 import { UserProfile, LanguageMedium, TopicLesson, DayStudyLog } from '../types';
 import { OFFICIAL_SOURCES_DIRECTORY, SYLLABUS_TOPICS } from '../data/mockSyllabus';
@@ -221,14 +225,49 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </p>
           </div>
 
-          <button
-            onClick={() => onSelectTab('syllabus')}
-            className="px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto shrink-0 shadow-xs"
-          >
-            <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-            <span>Open Complete Syllabus Directory</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => onSelectTab('calendar')}
+              className="px-3.5 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/40 text-purple-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto shrink-0 shadow-xs"
+            >
+              <Calendar className="w-3.5 h-3.5 text-purple-400" />
+              <span>Study Calendar</span>
+              <span className="px-1.5 py-0.2 bg-purple-950 text-[10px] rounded text-purple-300 border border-purple-500/30">
+                1d-30d
+              </span>
+            </button>
+
+            <button
+              onClick={() => onSelectTab('curriculum')}
+              className="px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto shrink-0 shadow-xs"
+            >
+              <Library className="w-3.5 h-3.5 text-amber-400" />
+              <span>Curriculum Bits Explorer</span>
+              <span className="px-1.5 py-0.2 bg-amber-950 text-[10px] rounded text-amber-300 border border-amber-500/30">
+                All Subjects
+              </span>
+            </button>
+
+            <button
+              onClick={() => onSelectTab('curriculum')}
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto shrink-0 shadow-xs"
+            >
+              <GraduationCap className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Self-Teach Track</span>
+              <span className="px-1.5 py-0.2 bg-emerald-950 text-[10px] rounded text-emerald-300 border border-emerald-500/30">
+                34-Wk
+              </span>
+            </button>
+
+            <button
+              onClick={() => onSelectTab('syllabus')}
+              className="px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto shrink-0 shadow-xs"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+              <span>Complete Syllabus Directory</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -338,6 +377,141 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <span>Launch Timed Test Simulator</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Interactive Upcoming Study Calendar & Spaced Review Radar */}
+      <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-slate-800 pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
+                <span>Upcoming Study Calendar & Spaced Review Radar</span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Daily 70:20:10 slots, active recall checkpoints and countdown to preliminary exams
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onSelectTab('calendar')}
+              className="px-3.5 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-purple-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <span>Open Full Calendar</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {/* Tile 1: Today's Primary Focus */}
+          <div
+            onClick={() => onSelectTab('calendar')}
+            className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-purple-500/50 transition-all cursor-pointer group flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between text-[11px] mb-2">
+                <span className="px-2 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 font-semibold">
+                  Today's 70% Core
+                </span>
+                <span className="text-slate-400 font-mono">06:30 - 09:30</span>
+              </div>
+              <h4 className="font-semibold text-xs text-slate-200 group-hover:text-purple-300 transition-colors">
+                Constitutional Framework & Panchayati Raj
+              </h4>
+              <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                Articles 243 to 243-O, 11th Schedule 29 subjects, Balwant Rai Mehta to L.M. Singhvi.
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-900 flex items-center justify-between text-[10px] text-slate-400">
+              <span className="text-emerald-400 font-medium">✓ Completed</span>
+              <span className="text-amber-400 font-semibold">3.0 hrs</span>
+            </div>
+          </div>
+
+          {/* Tile 2: Rajasthan Layer Session */}
+          <div
+            onClick={() => onSelectTab('calendar')}
+            className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-emerald-500/50 transition-all cursor-pointer group flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between text-[11px] mb-2">
+                <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold">
+                  20% Rajasthan
+                </span>
+                <span className="text-slate-400 font-mono">11:00 - 13:00</span>
+              </div>
+              <h4 className="font-semibold text-xs text-slate-200 group-hover:text-emerald-300 transition-colors">
+                Rajasthan PR Act 1994 & PESA 1999
+              </h4>
+              <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                3-tier structure, State Election Commission (Art 243K) and State Finance Commission (Art 243I).
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-900 flex items-center justify-between text-[10px] text-slate-400">
+              <span className="text-amber-400 font-medium">Pending Session</span>
+              <span className="text-amber-400 font-semibold">2.0 hrs</span>
+            </div>
+          </div>
+
+          {/* Tile 3: Spaced Recall Checkpoint */}
+          <div
+            onClick={() => onSelectTab('calendar')}
+            className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-purple-500/50 transition-all cursor-pointer group flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between text-[11px] mb-2">
+                <span className="px-2 py-0.5 rounded bg-purple-500/15 text-purple-400 border border-purple-500/30 font-semibold">
+                  Day 1 Recall
+                </span>
+                <span className="text-purple-400 font-mono">Tomorrow</span>
+              </div>
+              <h4 className="font-semibold text-xs text-slate-200 group-hover:text-purple-300 transition-colors">
+                5-3-2-1-1 Active Recall Sheet
+              </h4>
+              <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                Recall 5 facts, 3 concepts, 2 examiner traps without consulting open notes.
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-900 flex items-center justify-between text-[10px] text-slate-400">
+              <span className="text-purple-400 font-medium">Spaced Interval</span>
+              <span className="text-amber-400 font-semibold">1.25 hrs</span>
+            </div>
+          </div>
+
+          {/* Tile 4: Exam Milestones Countdown */}
+          <div
+            onClick={() => onSelectTab('calendar')}
+            className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/50 transition-all cursor-pointer group flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between text-[11px] mb-2">
+                <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold">
+                  Exam Horizon
+                </span>
+                <span className="text-slate-400 text-[10px]">Official Dates</span>
+              </div>
+              <div className="space-y-1.5 mt-1">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-300 font-medium">UPSC Prelims:</span>
+                  <span className="text-blue-400 font-bold">May 24, 2026</span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-300 font-medium">RPSC RAS Prelims:</span>
+                  <span className="text-rose-400 font-bold">Aug 30, 2026</span>
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-900 flex items-center justify-between text-[10px] text-slate-400">
+              <span className="text-amber-300">Sunday Dual Mock</span>
+              <span className="text-slate-500">Every 7 Days</span>
+            </div>
           </div>
         </div>
       </div>

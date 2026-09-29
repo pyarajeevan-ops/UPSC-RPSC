@@ -15,12 +15,14 @@ import {
   Send,
   Loader2,
   Compass,
-  FolderTree
+  FolderTree,
+  GraduationCap
 } from 'lucide-react';
-import { TopicLesson, ContentTag, LanguageMedium, PracticeQuestion } from '../types';
+import { TopicLesson, ContentTag, LanguageMedium, PracticeQuestion, UserProfile } from '../types';
 import { CompleteSyllabusExplorer } from './CompleteSyllabusExplorer';
 import { SyllabusTopSearchBar } from './SyllabusTopSearchBar';
 import { SyllabusTopicItem } from '../data/completeSyllabusData';
+import { SelfTeachCurriculum } from './SelfTeachCurriculum';
 
 interface SyllabusExplorerViewProps {
   topics: TopicLesson[];
@@ -28,6 +30,7 @@ interface SyllabusExplorerViewProps {
   onSelectTopicId: (id: string | null) => void;
   language: LanguageMedium;
   onAnswerPracticeQuestion?: (q: PracticeQuestion, selectedOption: string) => void;
+  userProfile?: UserProfile;
 }
 
 const STEP_TITLES = [
@@ -50,8 +53,9 @@ export const SyllabusExplorerView: React.FC<SyllabusExplorerViewProps> = ({
   selectedTopicId,
   onSelectTopicId,
   language,
+  userProfile,
 }) => {
-  const [viewMode, setViewMode] = useState<'DIRECTORY' | 'MASTERCLASS'>('DIRECTORY');
+  const [viewMode, setViewMode] = useState<'DIRECTORY' | 'CURRICULUM' | 'MASTERCLASS'>('DIRECTORY');
   const [globalSearchQuery, setGlobalSearchQuery] = useState<string>('');
   const [activeExternalTopic, setActiveExternalTopic] = useState<SyllabusTopicItem | null>(null);
   const [selectedExamId, setSelectedExamId] = useState<'UPSC_CSE' | 'RPSC_RAS'>('UPSC_CSE');
@@ -153,31 +157,46 @@ export const SyllabusExplorerView: React.FC<SyllabusExplorerViewProps> = ({
         }}
       />
 
-      {/* Primary Top View Mode Navigation: Full Directory vs 12-Step Masterclass */}
+      {/* Primary Top View Mode Navigation: Full Directory vs Self-Teach Curriculum vs 12-Step Masterclass */}
       <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-xl w-full sm:w-auto">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-xl w-full sm:w-auto overflow-x-auto">
           <button
             onClick={() => setViewMode('DIRECTORY')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
               viewMode === 'DIRECTORY'
                 ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <FolderTree className="w-4 h-4" />
-            <span>Full Syllabus Directory (UPSC & RPSC)</span>
+            <span>Complete Syllabus Directory</span>
+          </button>
+
+          <button
+            onClick={() => setViewMode('CURRICULUM')}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              viewMode === 'CURRICULUM'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <GraduationCap className="w-4 h-4" />
+            <span>Self-Teach Curriculum Track</span>
+            <span className="hidden md:inline-block px-1.5 py-0.2 bg-slate-900 text-[10px] rounded text-emerald-300 font-bold border border-emerald-500/30">
+              34-Wk Plan
+            </span>
           </button>
 
           <button
             onClick={() => setViewMode('MASTERCLASS')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
               viewMode === 'MASTERCLASS'
                 ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <BookOpen className="w-4 h-4" />
-            <span>12-Step Pedagogical Lessons</span>
+            <span>12-Step Lessons</span>
             {globalSearchQuery.trim() && (
               <span className="px-1.5 py-0.2 bg-slate-900 text-[10px] rounded text-amber-300 font-bold">
                 {filteredTopics.length}
@@ -209,7 +228,23 @@ export const SyllabusExplorerView: React.FC<SyllabusExplorerViewProps> = ({
         />
       )}
 
-      {/* View Mode 2: Guided 12-Step Topic Masterclasses */}
+      {/* View Mode 2: Self-Teach Curriculum & Roadmap Track */}
+      {viewMode === 'CURRICULUM' && (
+        <SelfTeachCurriculum
+          language={language}
+          userProfile={userProfile}
+          onSelectTopicLesson={(lessonId) => {
+            onSelectTopicId(lessonId);
+            setViewMode('MASTERCLASS');
+          }}
+          onOpenSyllabusTopic={(topicCode) => {
+            setGlobalSearchQuery(topicCode);
+            setViewMode('DIRECTORY');
+          }}
+        />
+      )}
+
+      {/* View Mode 3: Guided 12-Step Topic Masterclasses */}
       {viewMode === 'MASTERCLASS' && (
         <div className="space-y-6">
           {/* Top Controls: Filter Tags & Custom Topic Generator */}

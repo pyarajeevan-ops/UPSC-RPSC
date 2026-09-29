@@ -147,3 +147,29 @@ export interface DayStudyLog {
   challenges?: string;
   notes?: string;
 }
+
+export type CalendarEventType =
+  | 'UPSC_CORE'
+  | 'RPSC_RAJASTHAN'
+  | 'SPACED_REVISION'
+  | 'MOCK_TEST'
+  | 'EXAM_COUNTDOWN'
+  | 'CURRENT_AFFAIRS';
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  titleHindi?: string;
+  date: string; // YYYY-MM-DD
+  startTime?: string; // HH:mm
+  endTime?: string; // HH:mm
+  type: CalendarEventType;
+  topicId?: string;
+  subject?: string;
+  targetHours: number;
+  completed: boolean;
+  notes?: string;
+  spacedInterval?: 1 | 3 | 7 | 15 | 30;
+  examTag?: 'UPSC' | 'RPSC' | 'DUAL';
+  priority?: 'HIGH' | 'MEDIUM' | 'LOW';
+}
