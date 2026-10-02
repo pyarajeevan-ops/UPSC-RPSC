@@ -185,5 +185,110 @@ export const COMPREHENSIVE_QUESTIONS_BANK: PracticeQuestion[] = [
     mnemonic: 'Current is Concurrent: Electricity is on the Concurrent List.',
     difficulty: 'Moderate',
     cognitiveSkill: 'Analytical'
+  },
+  {
+    id: 'q-curric-01',
+    examType: 'UPSC',
+    subject: 'Ancient History',
+    topicId: 'indus-valley-civilisation',
+    text: 'With reference to the Indus Valley Civilisation, consider the following statements:\n1. The inhabitants practiced systematic town planning using burnt bricks and a covered drainage system.\n2. The script was written in Boustrophedon style from right to left in the first line and left to right in the second line.\n3. Massive structural temples dedicated to the Mother Goddess and Pashupati Mahadeva have been excavated across key sites.\nWhich of the statements given above are correct?',
+    options: [
+      '1 and 2 only',
+      '2 and 3 only',
+      '1 and 3 only',
+      '1, 2 and 3'
+    ],
+    correctOption: 'A',
+    explanations: [
+      'Statement 1 is correct: Burnt bricks and grid-system drainage are hallmark features of Harappan urban planning.',
+      'Statement 2 is correct: Harappan script is pictographic and bi-directional (Boustrophedon), undeciphered to date.',
+      'Statement 3 is incorrect: No evidence of temples has ever been found in Indus Valley Civilization sites; worship was iconographic/naturalistic (seals, terra-cotta figurines).'
+    ],
+    concept: 'Indus Valley Civilisation urban architecture and religious practices.',
+    trap: 'Statement 3 asserts "structural temples" existed; no temples have been excavated in Harappan sites.',
+    eliminationTactic: 'Statement 3 is an established UPSC trap (Harappans had no structural temples). Eliminate B, C, and D immediately to arrive at A.',
+    mnemonic: 'No Temples in Harappa: Religion was seal-based.',
+    difficulty: 'Moderate',
+    cognitiveSkill: 'Elimination'
+  },
+  {
+    id: 'q-curric-02',
+    examType: 'RPSC',
+    subject: 'Indian Polity & Administration',
+    topicId: 'panchayati-raj-local-gov',
+    text: 'Which of the following committees was the FIRST to recommend constitutional recognition and protection for Panchayati Raj Institutions in India?',
+    options: [
+      'Balwantrai Mehta Committee (1957)',
+      'Ashok Mehta Committee (1978)',
+      'G.V.K. Rao Committee (1985)',
+      'L.M. Singhvi Committee (1986)',
+      'Question not attempted'
+    ],
+    correctOption: 'D',
+    explanations: [
+      'Incorrect: Balwantrai Mehta recommended 3-tier PRIs but did not propose constitutional amendment.',
+      'Incorrect: Ashok Mehta recommended 2-tier PRIs (Mandal Panchayat + Zila Parishad).',
+      'Incorrect: GVK Rao focused on PRIs as central to rural development (grass without roots).',
+      'Correct: L.M. Singhvi Committee (1986), appointed by Rajiv Gandhi govt, first recommended that PRIs should be constitutionally recognized, protected and preserved.',
+      'Option E: Darken if not attempted.'
+    ],
+    concept: 'Chronology and recommendations of committees on Panchayati Raj.',
+    trap: 'Confusing Balwantrai Mehta (who recommended 3-tier structure) with L.M. Singhvi (who recommended constitutional status).',
+    eliminationTactic: 'Remember "Singhvi = Samvidhan": Singhvi proposed Constitutional status leading to 73rd CAA.',
+    mnemonic: 'Singhvi = Samvidhan (Constitutional Status).',
+    difficulty: 'Easy',
+    cognitiveSkill: 'Factual'
+  },
+  {
+    id: 'q-curric-03',
+    examType: 'UPSC',
+    subject: 'General Science',
+    topicId: 'science-and-technology',
+    text: 'Consider the following optical phenomena:\n1. Sparkling of diamond\n2. Mirage in deserts on hot summer days\n3. Transmission of signals in optical fibers\n4. Twinkling of stars in the night sky\nWhich of the above phenomena are caused primarily due to Total Internal Reflection (TIR)?',
+    options: [
+      '1, 2 and 3 only',
+      '2, 3 and 4 only',
+      '1 and 3 only',
+      '1, 2, 3 and 4'
+    ],
+    correctOption: 'A',
+    explanations: [
+      'Items 1, 2, and 3 are correct: Diamond sparkling, desert mirages, and optical fiber light transmission are all classic manifestations of Total Internal Reflection (light travelling from denser to rarer medium beyond critical angle).',
+      'Item 4 is incorrect: Twinkling of stars is caused by atmospheric REFRACTION through varying temperature and density layers of air, NOT Total Internal Reflection.'
+    ],
+    concept: 'Total Internal Reflection vs Atmospheric Refraction.',
+    trap: 'Item 4: Twinkling of stars is atmospheric refraction, not TIR.',
+    eliminationTactic: 'Eliminate 4 as star twinkling is refraction; options B and D fall away. 1 and 3 are standard TIR applications, hence A is correct.',
+    mnemonic: 'Stars Refract; Fibers and Diamonds Reflect (TIR).',
+    difficulty: 'Moderate',
+    cognitiveSkill: 'Analytical'
+  },
+  {
+    id: 'q-curric-04',
+    examType: 'RPSC',
+    subject: 'Physical Geography',
+    topicId: 'geography-of-india',
+    text: 'Through which of the following groups of Indian States does the 82.5° East longitude (the standard meridian determining Indian Standard Time) pass?',
+    options: [
+      'Uttar Pradesh, Madhya Pradesh, Chhattisgarh, Odisha, Andhra Pradesh',
+      'Uttar Pradesh, Bihar, Jharkhand, Odisha, West Bengal',
+      'Madhya Pradesh, Rajasthan, Gujarat, Maharashtra, Goa',
+      'Uttar Pradesh, Uttarakhand, Himachal Pradesh, Punjab, Haryana',
+      'Question not attempted'
+    ],
+    correctOption: 'A',
+    explanations: [
+      'Correct: Indian Standard Time (IST) meridian (82.5°E) passes through 5 States: Uttar Pradesh (Mirzapur/Prayagraj), Madhya Pradesh, Chhattisgarh, Odisha, and Andhra Pradesh.',
+      'Incorrect: Does not pass through Bihar or West Bengal.',
+      'Incorrect: Does not pass through Rajasthan or Gujarat (Tropic of Cancer passes through them, not 82.5°E).',
+      'Incorrect: 82.5°E is eastern meridian, does not pass through Punjab/Haryana.',
+      'Option E: Darken if not attempted.'
+    ],
+    concept: 'Standard Meridian of India (82.5° E) geographic path.',
+    trap: 'Confusing states on Tropic of Cancer (8 states) with states on the IST Meridian (5 states).',
+    eliminationTactic: 'Mnemonic "UP-MP-CH-OD-AP" (Chhatisgarh, Odisha, Andhra, MP, UP).',
+    mnemonic: 'MOUCA: MP, Odisha, UP, Chhattisgarh, Andhra.',
+    difficulty: 'Easy',
+    cognitiveSkill: 'Factual'
   }
 ];

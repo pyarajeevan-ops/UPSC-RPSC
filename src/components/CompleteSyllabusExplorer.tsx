@@ -50,6 +50,12 @@ import {
   TopicFlashcard
 } from '../data/topicInteractiveData';
 import { LanguageMedium } from '../types';
+import {
+  addUniversalBookmark,
+  removeUniversalBookmark,
+  getUniversalBookmarks,
+  logHistoryActivity
+} from '../utils/historyAndBookmarkStorage';
 
 interface CompleteSyllabusExplorerProps {
   language: LanguageMedium;
@@ -88,12 +94,35 @@ export const CompleteSyllabusExplorer: React.FC<CompleteSyllabusExplorerProps> =
   const [internalDeepDiveTopic, setInternalDeepDiveTopic] = useState<SyllabusTopicItem | null>(null);
   const activeDeepDiveTopic = externalDeepDiveTopic || internalDeepDiveTopic;
 
+  // Universal Bookmarks state synced from local storage
+  const [bookmarkedTopicIds, setBookmarkedTopicIds] = useState<string[]>(() => {
+    try {
+      return getUniversalBookmarks().map((b) => b.itemId);
+    } catch {
+      return [];
+    }
+  });
+
   const handleOpenDeepDive = (topic: SyllabusTopicItem) => {
     setInternalDeepDiveTopic(topic);
     setModalTab('OVERVIEW');
     setUserQuizAnswers({});
     setShowQuizExplanations({});
     setFlippedFlashcards({});
+
+    // Log in reading history
+    try {
+      logHistoryActivity({
+        type: 'READ_SYLLABUS_TOPIC',
+        title: `${topic.code}: ${topic.title}`,
+        subtitle: `${topic.stage} • ${topic.overlapPercentage}% Overlap • Fullscreen Deep Dive`,
+        category: topic.stage || 'General Studies Core',
+        targetExam: topic.overlapCategory === 'RAJASTHAN_EXCLUSIVE' ? 'RPSC' : 'DUAL',
+        metadata: { topicId: topic.id, tags: [topic.code, topic.stage] }
+      });
+    } catch (e) {
+      console.error('Failed to log topic read in history:', e);
+    }
   };
 
   const handleCloseDeepDive = () => {
@@ -187,6 +216,31 @@ export const CompleteSyllabusExplorer: React.FC<CompleteSyllabusExplorerProps> =
     } catch (e) {
       console.error('Failed to schedule spaced revision in calendar', e);
     }
+  };
+
+  const handleToggleBookmarkTopic = (topic: SyllabusTopicItem) => {
+    const isBookmarked = bookmarkedTopicIds.includes(topic.id);
+    if (isBookmarked) {
+      const match = getUniversalBookmarks().find((b) => b.itemId === topic.id);
+      if (match) removeUniversalBookmark(match.id);
+      setBookmarkedTopicIds((prev) => prev.filter((id) => id !== topic.id));
+      setCalendarToastMessage(`Removed "${topic.title.substring(0, 30)}..." from Bookmarks.`);
+    } else {
+      addUniversalBookmark({
+        itemType: 'SYLLABUS_TOPIC',
+        itemId: topic.id,
+        title: `${topic.code}: ${topic.title}`,
+        contentSnippet: topic.officialDescription.substring(0, 180),
+        category: topic.overlapCategory === 'RAJASTHAN_EXCLUSIVE' ? 'Rajasthan Special' : 'High-Yield Revision',
+        targetExam: topic.overlapCategory === 'RAJASTHAN_EXCLUSIVE' ? 'RPSC' : 'DUAL',
+        sourceTag: `${selectedExamId === 'UPSC_CSE' ? 'UPSC' : 'RPSC'} Syllabus (${topic.stage})`,
+        subject: currentSection?.name || 'General Studies',
+        notes: `Overlap: ${topic.overlapPercentage}% | Weightage: ${topic.weightage}`
+      });
+      setBookmarkedTopicIds((prev) => [...prev, topic.id]);
+      setCalendarToastMessage(`Saved "${topic.title.substring(0, 30)}..." to Universal Bookmarks!`);
+    }
+    setTimeout(() => setCalendarToastMessage(null), 3500);
   };
 
   useEffect(() => {
@@ -962,6 +1016,20 @@ ${topic.subtopics
                                   <Calendar className="w-3.5 h-3.5 text-purple-400" />
                                   <span>{scheduledTopicIds.includes(topic.id) ? 'Revisions Scheduled' : 'Schedule Revisions'}</span>
                                 </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleBookmarkTopic(topic)}
+                                  className={`px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border ${
+                                    bookmarkedTopicIds.includes(topic.id)
+                                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                      : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+                                  }`}
+                                  title="Store topic in categorized universal bookmarks"
+                                >
+                                  <Bookmark className={`w-3.5 h-3.5 ${bookmarkedTopicIds.includes(topic.id) ? 'fill-amber-400 text-amber-400' : 'text-slate-400'}`} />
+                                  <span>{bookmarkedTopicIds.includes(topic.id) ? 'Bookmarked' : 'Bookmark'}</span>
+                                </button>
                               </div>
 
                               {/* Right toolbar: Launch Masterclass, Mark Studied & Fullscreen */}
@@ -1478,6 +1546,20 @@ ${topic.subtopics
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleToggleBookmarkTopic(activeDeepDiveTopic)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border ${
+                    bookmarkedTopicIds.includes(activeDeepDiveTopic.id)
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                  }`}
+                  title="Bookmark topic into universal bookmarks"
+                >
+                  <Bookmark className={`w-3.5 h-3.5 ${bookmarkedTopicIds.includes(activeDeepDiveTopic.id) ? 'fill-amber-400 text-amber-400' : 'text-slate-400'}`} />
+                  <span>{bookmarkedTopicIds.includes(activeDeepDiveTopic.id) ? 'Bookmarked' : 'Bookmark'}</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => toggleMasteredTopic(activeDeepDiveTopic.id)}

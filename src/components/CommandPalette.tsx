@@ -18,7 +18,8 @@ import {
   X,
   Keyboard,
   Calendar,
-  Library
+  Library,
+  FolderClock
 } from 'lucide-react';
 import { COMPLETE_EXAM_SYLLABUS_DATA, SyllabusTopicItem } from '../data/completeSyllabusData';
 import { COMPLETE_CURRICULUM_DOMAINS } from '../data/curriculumKnowledgeData';
@@ -97,6 +98,19 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       },
     },
     {
+      id: 'nav-curriculum-vault',
+      category: 'NAVIGATION',
+      title: 'Curriculum Knowledge Vault & Micro-Bits Explorer',
+      titleHindi: 'पाठ्यक्रम ज्ञान निधि (Curriculum Bits Explorer)',
+      subtitle: 'Exhaustive notes on History, Polity, Geography, Economy, Science & GK with instant recall flashcards',
+      icon: Library,
+      badge: 'Knowledge Vault',
+      run: () => {
+        onSelectTab('curriculum');
+        onClose();
+      },
+    },
+    {
       id: 'nav-curriculum',
       category: 'NAVIGATION',
       title: 'Self-Teach Curriculum Track',
@@ -119,6 +133,32 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       badge: 'Directory',
       run: () => {
         onSelectTab('syllabus');
+        onClose();
+      },
+    },
+    {
+      id: 'nav-resources',
+      category: 'NAVIGATION',
+      title: 'Vetted Resources, Standard Books & Cheat Sheets',
+      titleHindi: 'प्रामाणिक अध्ययन सामग्री व संदर्भ पुस्तकें',
+      subtitle: '24 standard books & NCERTs, 20 government portals, 11 PYQs & 8 revision cheat sheets',
+      icon: Library,
+      badge: 'Resources Hub',
+      run: () => {
+        onSelectTab('resources');
+        onClose();
+      },
+    },
+    {
+      id: 'nav-notes-history',
+      category: 'NAVIGATION',
+      title: 'Offline PDF Notes, History & Universal Bookmarks',
+      titleHindi: 'ऑफलाइन नोट्स, पठन इतिहास एवं बुकमार्क्स',
+      subtitle: 'Auto-synthesize notes from PDFs, track every reading in timeline, and organize bookmarks',
+      icon: FolderClock,
+      badge: 'Offline Vault',
+      run: () => {
+        onSelectTab('notes-history');
         onClose();
       },
     },

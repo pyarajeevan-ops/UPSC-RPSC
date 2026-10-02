@@ -173,3 +173,90 @@ export interface CalendarEvent {
   examTag?: 'UPSC' | 'RPSC' | 'DUAL';
   priority?: 'HIGH' | 'MEDIUM' | 'LOW';
 }
+
+// ---------------------------------------------------------------------------
+// Offline PDF Notes, Reading History & Universal Bookmarks Systems
+// ---------------------------------------------------------------------------
+
+export type CurriculumCategory =
+  | 'Ancient History'
+  | 'Medieval History'
+  | 'Modern History'
+  | 'Art & Culture'
+  | 'Physical Geography'
+  | 'Indian Geography'
+  | 'Environment & Ecology'
+  | 'Indian Polity'
+  | 'Indian Economy'
+  | 'General Science'
+  | 'Rajasthan Special'
+  | 'Defense & Security'
+  | 'General Knowledge'
+  | 'Uncategorized';
+
+export interface ExtractedNote {
+  id: string;
+  title: string;
+  sourceDocName: string;
+  category: CurriculumCategory;
+  targetExam: 'UPSC_CORE' | 'RAJASTHAN_EXCLUSIVE' | 'COMMON_CORE';
+  bulletPoints: string[];
+  keyTerms: string[];
+  examAngles: string[];
+  rawSnippet: string;
+  pageNumber?: number;
+  createdAt: string; // ISO string
+  importance: 'HIGH' | 'MEDIUM' | 'LOW';
+}
+
+export type HistoryActivityType =
+  | 'READ_NOTE'
+  | 'READ_CURRICULUM_BIT'
+  | 'READ_SYLLABUS_TOPIC'
+  | 'ADDED_PDF_NOTE'
+  | 'ATTEMPTED_QUIZ'
+  | 'BOOKMARKED_ITEM'
+  | 'SCHEDULED_CALENDAR';
+
+export interface HistoryEntry {
+  id: string;
+  type: HistoryActivityType;
+  title: string;
+  subtitle: string;
+  category: string;
+  timestamp: string; // ISO string
+  targetExam?: 'UPSC' | 'RPSC' | 'DUAL';
+  metadata?: {
+    topicId?: string;
+    sourceName?: string;
+    score?: number;
+    scoreMax?: number;
+    tags?: string[];
+  };
+}
+
+export type BookmarkCategory =
+  | 'High-Yield Revision'
+  | 'Mistake Trap'
+  | 'Polity & Constitution'
+  | 'Geography & Environment'
+  | 'History & Culture'
+  | 'Economy & Schemes'
+  | 'Rajasthan Special'
+  | 'General Science'
+  | 'Custom';
+
+export interface UniversalBookmark {
+  id: string;
+  itemType: 'CURRICULUM_BIT' | 'SYLLABUS_TOPIC' | 'EXTRACTED_NOTE' | 'MISTAKE_LOG' | 'CUSTOM_SNIPPET' | 'BOOK_RESOURCE' | 'OFFICIAL_SOURCE' | 'PYQ_RESOURCE';
+  itemId: string;
+  title: string;
+  contentSnippet: string;
+  category: BookmarkCategory;
+  customFolder?: string;
+  subject?: string;
+  targetExam: 'UPSC' | 'RPSC' | 'DUAL';
+  sourceTag: string;
+  notes?: string;
+  bookmarkedAt: string; // ISO string
+}

@@ -27,11 +27,15 @@ import { DayStudyLog, UserProfile } from '../types';
 interface WeeklyPerformanceReportProps {
   userProfile: UserProfile;
   dayLogs: DayStudyLog[];
+  onSelectTab?: (tab: string) => void;
+  onOpenOverlapSubject?: (subjectId: string) => void;
 }
 
 export const WeeklyPerformanceReport: React.FC<WeeklyPerformanceReportProps> = ({
   userProfile,
   dayLogs,
+  onSelectTab,
+  onOpenOverlapSubject,
 }) => {
   const [viewMode, setViewMode] = useState<'stacked-hours' | 'normalized-percentage'>('stacked-hours');
   const dailyTarget = userProfile.studyHours || 8;
@@ -227,10 +231,17 @@ export const WeeklyPerformanceReport: React.FC<WeeklyPerformanceReportProps> = (
       {/* KPI Highlight Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Weekly Hours */}
-        <div className="bg-slate-950/80 border border-slate-800 p-3.5 rounded-xl">
-          <span className="text-[11px] font-medium text-slate-400 block mb-1">
-            Total Weekly Output
-          </span>
+        <div
+          onClick={() => onSelectTab && onSelectTab('calendar')}
+          className="bg-slate-950/80 border border-slate-800 hover:border-slate-700 p-3.5 rounded-xl cursor-pointer transition-all hover:bg-slate-900/60 group"
+          title="Click to view weekly breakdown in Study Calendar"
+        >
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] font-medium text-slate-400 group-hover:text-slate-200">
+              Total Weekly Output
+            </span>
+            <Calendar className="w-3 h-3 text-slate-500 group-hover:text-amber-400" />
+          </div>
           <div className="flex items-baseline gap-1">
             <span className="text-xl sm:text-2xl font-serif font-bold text-slate-100 tabular-nums">
               {totalWeeklyHours}
@@ -238,12 +249,19 @@ export const WeeklyPerformanceReport: React.FC<WeeklyPerformanceReportProps> = (
             <span className="text-xs text-slate-400">hrs</span>
           </div>
           <span className="text-[10px] text-slate-500 mt-1 block">
-            Avg {(totalWeeklyHours / (dayLogs.length || 7)).toFixed(1)}h/day
+            Avg {(totalWeeklyHours / (dayLogs.length || 7)).toFixed(1)}h/day • View Calendar →
           </span>
         </div>
 
         {/* UPSC Common Core */}
-        <div className="bg-slate-950/80 border border-slate-800 p-3.5 rounded-xl">
+        <div
+          onClick={() => {
+            if (onOpenOverlapSubject) onOpenOverlapSubject('polity-governance');
+            else if (onSelectTab) onSelectTab('curriculum');
+          }}
+          className="bg-slate-950/80 border border-slate-800 hover:border-amber-500/50 p-3.5 rounded-xl cursor-pointer transition-all hover:bg-slate-900/60 group"
+          title="Click to inspect 70% Common Core syllabus overlap & notes"
+        >
           <div className="flex items-center justify-between mb-1">
             <span className="text-[11px] font-medium text-amber-400">UPSC Core</span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 font-mono">
@@ -265,7 +283,11 @@ export const WeeklyPerformanceReport: React.FC<WeeklyPerformanceReportProps> = (
         </div>
 
         {/* RPSC Rajasthan Layer */}
-        <div className="bg-slate-950/80 border border-slate-800 p-3.5 rounded-xl">
+        <div
+          onClick={() => onSelectTab && onSelectTab('rajasthan-vault')}
+          className="bg-slate-950/80 border border-slate-800 hover:border-emerald-500/50 p-3.5 rounded-xl cursor-pointer transition-all hover:bg-slate-900/60 group"
+          title="Click to open Rajasthan Knowledge Vault"
+        >
           <div className="flex items-center justify-between mb-1">
             <span className="text-[11px] font-medium text-emerald-400">RPSC Core</span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 font-mono">
@@ -287,9 +309,15 @@ export const WeeklyPerformanceReport: React.FC<WeeklyPerformanceReportProps> = (
         </div>
 
         {/* 70-20-10 Ratio Alignment Score */}
-        <div className="bg-slate-950/80 border border-slate-800 p-3.5 rounded-xl">
+        <div
+          onClick={() => {
+            if (onOpenOverlapSubject) onOpenOverlapSubject('polity-governance');
+          }}
+          className="bg-slate-950/80 border border-slate-800 hover:border-amber-500/50 p-3.5 rounded-xl cursor-pointer transition-all hover:bg-slate-900/60 group"
+          title="Click to view 70:20:10 syllabus overlap breakdown"
+        >
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-medium text-slate-300">70:20:10 Balance</span>
+            <span className="text-[11px] font-medium text-slate-300 group-hover:text-amber-300">70:20:10 Balance</span>
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
           </div>
           <div className="flex items-baseline gap-1">
@@ -300,10 +328,10 @@ export const WeeklyPerformanceReport: React.FC<WeeklyPerformanceReportProps> = (
           </div>
           <span className="text-[10px] text-slate-400 mt-1 block truncate">
             {alignmentScore >= 90
-              ? 'Optimal Prelims Equilibrium'
+              ? 'Optimal Equilibrium • View Details'
               : alignmentScore >= 75
-              ? 'Sound balance, refine mocks'
-              : 'Re-align towards 70% core'}
+              ? 'Sound balance • View Details'
+              : 'Re-align towards 70% • View Details'}
           </span>
         </div>
       </div>

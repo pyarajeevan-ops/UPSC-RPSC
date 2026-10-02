@@ -16,13 +16,22 @@ import {
   Loader2,
   Compass,
   FolderTree,
-  GraduationCap
+  GraduationCap,
+  Bookmark,
+  Volume2,
+  VolumeX,
+  Copy,
+  Check
 } from 'lucide-react';
 import { TopicLesson, ContentTag, LanguageMedium, PracticeQuestion, UserProfile } from '../types';
 import { CompleteSyllabusExplorer } from './CompleteSyllabusExplorer';
 import { SyllabusTopSearchBar } from './SyllabusTopSearchBar';
 import { SyllabusTopicItem } from '../data/completeSyllabusData';
 import { SelfTeachCurriculum } from './SelfTeachCurriculum';
+import {
+  addUniversalBookmark,
+  logHistoryActivity
+} from '../utils/historyAndBookmarkStorage';
 
 interface SyllabusExplorerViewProps {
   topics: TopicLesson[];
@@ -64,6 +73,55 @@ export const SyllabusExplorerView: React.FC<SyllabusExplorerViewProps> = ({
   const [activeStep, setActiveStep] = useState<number>(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
   const [showExplanation, setShowExplanation] = useState<Record<string, boolean>>({});
+  const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
+  const [copiedLesson, setCopiedLesson] = useState<boolean>(false);
+  const [bookmarkToast, setBookmarkToast] = useState<string | null>(null);
+
+  const handleToggleSpeech = (topic: TopicLesson) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (isPlayingAudio) {
+      window.speechSynthesis.cancel();
+      setIsPlayingAudio(false);
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const textToSpeak = `${topic.title}. Subject: ${topic.subject}. Core Concept: ${topic.coreConcept}. Why it matters for UPSC: ${topic.whyMattersUPSC}. Why it matters for RPSC: ${topic.whyMattersRPSC}`;
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.onend = () => setIsPlayingAudio(false);
+    utterance.onerror = () => setIsPlayingAudio(false);
+    window.speechSynthesis.speak(utterance);
+    setIsPlayingAudio(true);
+  };
+
+  const handleBookmarkMasterclass = (topic: TopicLesson) => {
+    addUniversalBookmark({
+      itemType: 'SYLLABUS_TOPIC',
+      itemId: topic.id,
+      title: topic.title,
+      contentSnippet: topic.coreConcept.substring(0, 180),
+      category: topic.subject.includes('Polity') ? 'Polity & Constitution' : 'High-Yield Revision',
+      targetExam: 'DUAL',
+      sourceTag: `Masterclass Lesson: ${topic.subject}`,
+      subject: topic.subject,
+      notes: `Overlap: ${topic.overlapPercentage}% shared core.`
+    });
+    logHistoryActivity({
+      type: 'READ_SYLLABUS_TOPIC',
+      title: `Studied Masterclass: ${topic.title}`,
+      subtitle: `${topic.subject} • ${topic.overlapPercentage}% Overlap`,
+      category: topic.subject,
+      targetExam: 'DUAL'
+    });
+    setBookmarkToast(`Bookmarked "${topic.title.substring(0, 35)}..." to Vault!`);
+    setTimeout(() => setBookmarkToast(null), 3000);
+  };
+
+  const handleCopyMasterclassNotes = (topic: TopicLesson) => {
+    const text = `[MARGDARSHAK 12-STEP MASTERCLASS]\nTitle: ${topic.title}\nSubject: ${topic.subject} (${topic.overlapPercentage}% Overlap)\n\nCore Concept:\n${topic.coreConcept}\n\nUPSC Importance:\n${topic.whyMattersUPSC}\n\nRPSC Importance:\n${topic.whyMattersRPSC}\n\nKey Facts:\n${topic.importantFacts.join('\n')}\n\nExaminer Traps:\n${topic.commonMisconceptionsAndTraps.join('\n')}`;
+    navigator.clipboard.writeText(text);
+    setCopiedLesson(true);
+    setTimeout(() => setCopiedLesson(false), 2500);
+  };
 
   // AI Deep-dive state
   const [customTopicInput, setCustomTopicInput] = useState('');

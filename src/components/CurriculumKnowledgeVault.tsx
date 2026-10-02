@@ -23,7 +23,14 @@ import {
   Shield,
   GraduationCap,
   Copy,
-  Check
+  Check,
+  Zap,
+  RotateCcw,
+  Eye,
+  EyeOff,
+  X,
+  FileText,
+  FolderClock
 } from 'lucide-react';
 import {
   COMPLETE_CURRICULUM_DOMAINS,
@@ -31,6 +38,12 @@ import {
   KnowledgeBit
 } from '../data/curriculumKnowledgeData';
 import { LanguageMedium, UserProfile } from '../types';
+import {
+  logHistoryActivity,
+  addUniversalBookmark,
+  removeUniversalBookmark,
+  getUniversalBookmarks
+} from '../utils/historyAndBookmarkStorage';
 
 interface CurriculumKnowledgeVaultProps {
   language: LanguageMedium;
@@ -38,6 +51,7 @@ interface CurriculumKnowledgeVaultProps {
   onOpenCalendar?: () => void;
   onOpenTestMode?: () => void;
   onOpenSyllabus?: () => void;
+  onOpenNotesHistory?: () => void;
 }
 
 export const CurriculumKnowledgeVault: React.FC<CurriculumKnowledgeVaultProps> = ({
@@ -46,6 +60,7 @@ export const CurriculumKnowledgeVault: React.FC<CurriculumKnowledgeVaultProps> =
   onOpenCalendar,
   onOpenTestMode,
   onOpenSyllabus,
+  onOpenNotesHistory,
 }) => {
   const [selectedDomainId, setSelectedDomainId] = useState<string>('ancient-medieval-history');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -58,12 +73,57 @@ export const CurriculumKnowledgeVault: React.FC<CurriculumKnowledgeVaultProps> =
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [scheduleToast, setScheduleToast] = useState<string | null>(null);
 
-  const toggleSaveBit = (bitId: string) => {
-    setSavedBitIds((prev) => {
+  // Completed micro-bits tracker
+  const [masteredBitIds, setMasteredBitIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('margdarshak_mastered_knowledge_bits');
+    return saved ? JSON.parse(saved) : ['hist-01'];
+  });
+
+  // Interactive Modals: Flashcard Deck or Quick Concept Drill
+  const [activeFlashcardBit, setActiveFlashcardBit] = useState<KnowledgeBit | null>(null);
+  const [isFlashcardFlipped, setIsFlashcardFlipped] = useState<boolean>(false);
+  const [activeQuizBit, setActiveQuizBit] = useState<KnowledgeBit | null>(null);
+  const [selectedQuizAnswer, setSelectedQuizAnswer] = useState<number | null>(null);
+  const [quizSubmitted, setQuizSubmitted] = useState<boolean>(false);
+
+  const toggleMasteredBit = (bitId: string) => {
+    setMasteredBitIds((prev) => {
       const next = prev.includes(bitId) ? prev.filter((id) => id !== bitId) : [...prev, bitId];
-      localStorage.setItem('margdarshak_saved_knowledge_bits', JSON.stringify(next));
+      localStorage.setItem('margdarshak_mastered_knowledge_bits', JSON.stringify(next));
       return next;
     });
+  };
+
+  const toggleSaveBit = (bit: KnowledgeBit) => {
+    const isCurrentlySaved = savedBitIds.includes(bit.id);
+    const next = isCurrentlySaved ? savedBitIds.filter((id) => id !== bit.id) : [...savedBitIds, bit.id];
+    setSavedBitIds(next);
+    localStorage.setItem('margdarshak_saved_knowledge_bits', JSON.stringify(next));
+
+    if (!isCurrentlySaved) {
+      // Map to Universal Bookmark Category
+      let cat: 'Polity & Constitution' | 'History & Culture' | 'Geography & Environment' | 'Economy & Schemes' | 'General Science' | 'Rajasthan Special' | 'High-Yield Revision' = 'High-Yield Revision';
+      if (bit.subject.includes('History')) cat = 'History & Culture';
+      else if (bit.subject.includes('Polity')) cat = 'Polity & Constitution';
+      else if (bit.subject.includes('Geography') || bit.subject.includes('Environment')) cat = 'Geography & Environment';
+      else if (bit.subject.includes('Economy')) cat = 'Economy & Schemes';
+      else if (bit.subject.includes('Science')) cat = 'General Science';
+      else if (bit.targetExam === 'RAJASTHAN_EXCLUSIVE') cat = 'Rajasthan Special';
+
+      addUniversalBookmark({
+        itemType: 'CURRICULUM_BIT',
+        itemId: bit.id,
+        title: `${bit.topic}: ${bit.subtopic}`,
+        contentSnippet: bit.keyFactOrConcept,
+        category: cat,
+        targetExam: bit.targetExam === 'RAJASTHAN_EXCLUSIVE' ? 'RPSC' : 'DUAL',
+        subject: bit.subject,
+        sourceTag: `Knowledge Vault (${bit.referencePage})`,
+        notes: bit.trapAlert ? `Exam Trap: ${bit.trapAlert}` : undefined
+      });
+      setScheduleToast(`Bookmarked to "${cat}" folder & logged in History!`);
+      setTimeout(() => setScheduleToast(null), 3500);
+    }
   };
 
   const handleCopyBit = (bit: KnowledgeBit) => {
@@ -179,6 +239,16 @@ export const CurriculumKnowledgeVault: React.FC<CurriculumKnowledgeVaultProps> =
               >
                 <Calendar className="w-4 h-4 text-purple-400" />
                 <span>Study Calendar</span>
+              </button>
+            )}
+            {onOpenNotesHistory && (
+              <button
+                type="button"
+                onClick={onOpenNotesHistory}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-blue-300 border border-blue-500/30 text-xs font-semibold transition-all cursor-pointer shadow-sm"
+              >
+                <FolderClock className="w-4 h-4 text-blue-400" />
+                <span>PDF Notes & History</span>
               </button>
             )}
             {onOpenTestMode && (
@@ -324,7 +394,20 @@ export const CurriculumKnowledgeVault: React.FC<CurriculumKnowledgeVaultProps> =
               >
                 {/* Module Summary Header */}
                 <div
-                  onClick={() => setExpandedBitId(isExpanded ? null : bit.id)}
+                  onClick={() => {
+                    const willExpand = !isExpanded;
+                    setExpandedBitId(willExpand ? bit.id : null);
+                    if (willExpand) {
+                      logHistoryActivity({
+                        type: 'READ_CURRICULUM_BIT',
+                        title: `${bit.topic}: ${bit.subtopic}`,
+                        subtitle: `${bit.subject} • ${bit.referencePage}`,
+                        category: bit.subject,
+                        targetExam: bit.targetExam === 'RAJASTHAN_EXCLUSIVE' ? 'RPSC' : 'DUAL',
+                        metadata: { topicId: bit.id, tags: bit.highYieldTags }
+                      });
+                    }
+                  }}
                   className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-slate-800/40 transition-colors"
                 >
                   <div className="space-y-1.5 flex-1">
@@ -359,7 +442,23 @@ export const CurriculumKnowledgeVault: React.FC<CurriculumKnowledgeVaultProps> =
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleSaveBit(bit.id);
+                        toggleMasteredBit(bit.id);
+                      }}
+                      className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+                        masteredBitIds.includes(bit.id)
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                          : 'bg-slate-800/80 hover:bg-slate-700 text-slate-400 border-slate-700'
+                      }`}
+                      title={masteredBitIds.includes(bit.id) ? 'Mastered ✓' : 'Mark as Mastered'}
+                    >
+                      <CheckCircle2 className={`w-4 h-4 ${masteredBitIds.includes(bit.id) ? 'text-amber-400' : ''}`} />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSaveBit(bit);
                       }}
                       className={`p-2 rounded-xl border transition-colors cursor-pointer ${
                         isSaved
@@ -369,6 +468,19 @@ export const CurriculumKnowledgeVault: React.FC<CurriculumKnowledgeVaultProps> =
                       title={isSaved ? 'Saved in Personal Vault' : 'Bookmark to Vault'}
                     >
                       <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-emerald-400 text-emerald-400' : ''}`} />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveFlashcardBit(bit);
+                        setIsFlashcardFlipped(false);
+                      }}
+                      className="p-2 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/30 transition-colors cursor-pointer"
+                      title="Open Active Recall Flashcard"
+                    >
+                      <Zap className="w-4 h-4" />
                     </button>
 
                     <button
@@ -490,6 +602,101 @@ export const CurriculumKnowledgeVault: React.FC<CurriculumKnowledgeVaultProps> =
           })
         )}
       </div>
+
+      {/* Interactive Active Recall Flashcard Modal */}
+      {activeFlashcardBit && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold border border-blue-500/30 flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Active Recall Flashcard</span>
+                </span>
+                <span className="text-xs text-slate-400">
+                  {activeFlashcardBit.subject} • {activeFlashcardBit.referencePage}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveFlashcardBit(null)}
+                className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Flashcard Body */}
+            <div
+              onClick={() => setIsFlashcardFlipped(!isFlashcardFlipped)}
+              className="min-h-[220px] p-6 rounded-2xl bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-700/80 cursor-pointer flex flex-col justify-between hover:border-amber-400/50 transition-all select-none shadow-inner"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs text-amber-400 font-bold uppercase tracking-wider">
+                  <span>{isFlashcardFlipped ? 'Revealed Concept & Deep-Dive' : 'Prompt / Recall Trigger'}</span>
+                  <span className="text-[11px] text-slate-400 font-normal">Click or Tap to Flip ↻</span>
+                </div>
+
+                {!isFlashcardFlipped ? (
+                  <div className="space-y-3 pt-2">
+                    <h3 className="text-xl font-bold text-white">
+                      {activeFlashcardBit.topic}
+                    </h3>
+                    <p className="text-sm font-semibold text-slate-300">
+                      Subtopic: {activeFlashcardBit.subtopic}
+                    </p>
+                    <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-amber-200/90">
+                      Question angle: {activeFlashcardBit.examAngle}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3 pt-2 animate-fade-in">
+                    <p className="text-xs sm:text-sm text-slate-200 font-mono whitespace-pre-line leading-relaxed">
+                      {activeFlashcardBit.detailedExplanation}
+                    </p>
+                    {activeFlashcardBit.trapAlert && (
+                      <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-800/40 text-xs text-rose-300">
+                        <strong>Trap Alert:</strong> {activeFlashcardBit.trapAlert}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-4 flex items-center justify-between text-xs text-slate-400 border-t border-slate-800/80 mt-4">
+                <span>{isFlashcardFlipped ? 'Answer Displayed' : 'Try testing your memory before flipping'}</span>
+                <span className="text-blue-400 font-medium">
+                  {isFlashcardFlipped ? 'Tap to hide' : 'Tap to reveal'}
+                </span>
+              </div>
+            </div>
+
+            {/* Modal Controls */}
+            <div className="flex items-center justify-between gap-3 pt-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => {
+                  toggleMasteredBit(activeFlashcardBit.id);
+                  setActiveFlashcardBit(null);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-colors cursor-pointer"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>{masteredBitIds.includes(activeFlashcardBit.id) ? 'Mastered in Deck ✓' : 'Mark as Mastered'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleScheduleBitInCalendar(activeFlashcardBit)}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-bold transition-colors cursor-pointer"
+              >
+                <Calendar className="w-4 h-4" />
+                <span>Schedule 5-3-2-1-1 Review</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

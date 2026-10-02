@@ -24,7 +24,9 @@ import {
   Search,
   X,
   Bookmark,
-  Library
+  Library,
+  FolderClock,
+  ChevronRight
 } from 'lucide-react';
 import {
   SELF_TEACH_PHASES_DATA,
@@ -35,6 +37,12 @@ import {
 } from '../data/selfTeachCurriculumData';
 import { CurriculumKnowledgeVault } from './CurriculumKnowledgeVault';
 import { LanguageMedium, UserProfile } from '../types';
+import {
+  addUniversalBookmark,
+  removeUniversalBookmark,
+  getUniversalBookmarks,
+  logHistoryActivity
+} from '../utils/historyAndBookmarkStorage';
 
 interface SelfTeachCurriculumProps {
   language: LanguageMedium;
@@ -43,6 +51,7 @@ interface SelfTeachCurriculumProps {
   onOpenSyllabusTopic?: (topicCode: string) => void;
   onOpenCalendar?: () => void;
   onOpenTestMode?: () => void;
+  onOpenNotesHistory?: () => void;
 }
 
 export const SelfTeachCurriculum: React.FC<SelfTeachCurriculumProps> = ({
@@ -52,6 +61,7 @@ export const SelfTeachCurriculum: React.FC<SelfTeachCurriculumProps> = ({
   onOpenSyllabusTopic,
   onOpenCalendar,
   onOpenTestMode,
+  onOpenNotesHistory,
 }) => {
   // Curriculum Mode: 'roadmap' (34-week phase breakdown) vs 'knowledge-vault' (deep micro-bits explorer)
   const [curriculumViewMode, setCurriculumViewMode] = useState<'roadmap' | 'knowledge-vault'>('knowledge-vault');
@@ -101,6 +111,99 @@ export const SelfTeachCurriculum: React.FC<SelfTeachCurriculumProps> = ({
   // Calendar auto-schedule tracking
   const [scheduledModuleIds, setScheduledModuleIds] = useState<string[]>([]);
   const [calendarToast, setCalendarToast] = useState<string | null>(null);
+
+  // Completed daily tasks tracking
+  const [completedDays, setCompletedDays] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = localStorage.getItem('margdarshak_completed_module_days');
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const toggleDayCompleted = (dayKey: string) => {
+    setCompletedDays((prev) => {
+      const next = { ...prev, [dayKey]: !prev[dayKey] };
+      try {
+        localStorage.setItem('margdarshak_completed_module_days', JSON.stringify(next));
+      } catch (e) {
+        console.error(e);
+      }
+      return next;
+    });
+  };
+
+  // Interactive Reading Source Modal state
+  interface ReadingModalData {
+    book: string;
+    chapters: string;
+    priority: string;
+    moduleTitle: string;
+    targetExam: 'COMMON_CORE' | 'RAJASTHAN_EXCLUSIVE' | 'UPSC_EXCLUSIVE';
+  }
+  const [activeReadingModal, setActiveReadingModal] = useState<ReadingModalData | null>(null);
+
+  // Bookmarked curriculum modules state
+  const [bookmarkedModuleIds, setBookmarkedModuleIds] = useState<string[]>(() => {
+    try {
+      return getUniversalBookmarks().map((b) => b.itemId);
+    } catch {
+      return [];
+    }
+  });
+
+  const handleBookmarkModule = (mod: SelfTeachModule) => {
+    const isBookmarked = bookmarkedModuleIds.includes(mod.id);
+    if (isBookmarked) {
+      const match = getUniversalBookmarks().find((b) => b.itemId === mod.id);
+      if (match) removeUniversalBookmark(match.id);
+      setBookmarkedModuleIds((prev) => prev.filter((id) => id !== mod.id));
+      setCalendarToast(`Removed "${mod.title.substring(0, 30)}..." from Bookmarks.`);
+    } else {
+      addUniversalBookmark({
+        itemType: 'CURRICULUM_BIT',
+        itemId: mod.id,
+        title: mod.title,
+        contentSnippet: mod.overview.substring(0, 180),
+        category: mod.targetExam === 'RAJASTHAN_EXCLUSIVE' ? 'Rajasthan Special' : 'High-Yield Revision',
+        targetExam: mod.targetExam === 'RAJASTHAN_EXCLUSIVE' ? 'RPSC' : mod.targetExam === 'UPSC_EXCLUSIVE' ? 'UPSC' : 'DUAL',
+        sourceTag: `Self-Teach Track (${mod.weekRange})`,
+        subject: mod.targetExam === 'RAJASTHAN_EXCLUSIVE' ? 'Rajasthan Layer' : 'Common Core',
+        notes: `Est: ${mod.estimatedHours} hrs • Required: ${mod.requiredReadings.map(r => r.book).join(', ')}`
+      });
+      setBookmarkedModuleIds((prev) => [...prev, mod.id]);
+      setCalendarToast(`Saved "${mod.title.substring(0, 30)}..." to Universal Bookmarks!`);
+    }
+    setTimeout(() => setCalendarToast(null), 3500);
+  };
+
+  const handleBookmarkReading = (reading: ReadingModalData) => {
+    addUniversalBookmark({
+      itemType: 'CUSTOM_SNIPPET',
+      itemId: `reading-${Date.now()}`,
+      title: `${reading.book}: ${reading.chapters}`,
+      contentSnippet: `Standard Reference for ${reading.moduleTitle}. Priority: ${reading.priority}`,
+      category: reading.targetExam === 'RAJASTHAN_EXCLUSIVE' ? 'Rajasthan Special' : 'High-Yield Revision',
+      targetExam: reading.targetExam === 'RAJASTHAN_EXCLUSIVE' ? 'RPSC' : reading.targetExam === 'UPSC_EXCLUSIVE' ? 'UPSC' : 'DUAL',
+      sourceTag: `Standard Books Directory`,
+      subject: reading.moduleTitle
+    });
+    setCalendarToast(`Saved "${reading.book}" to Universal Bookmarks!`);
+    setTimeout(() => setCalendarToast(null), 3500);
+  };
+
+  const handleLogReadingToHistory = (reading: ReadingModalData) => {
+    logHistoryActivity({
+      type: 'READ_CURRICULUM_BIT',
+      title: `Studied: ${reading.book}`,
+      subtitle: `${reading.chapters} • ${reading.moduleTitle}`,
+      category: reading.moduleTitle,
+      targetExam: reading.targetExam === 'RAJASTHAN_EXCLUSIVE' ? 'RPSC' : reading.targetExam === 'UPSC_EXCLUSIVE' ? 'UPSC' : 'DUAL'
+    });
+    setCalendarToast(`Recorded study session for "${reading.book}" in Reading History!`);
+    setTimeout(() => setCalendarToast(null), 3500);
+  };
 
   const handleScheduleModuleInCalendar = async (mod: SelfTeachModule) => {
     try {
@@ -311,6 +414,7 @@ export const SelfTeachCurriculum: React.FC<SelfTeachCurriculumProps> = ({
           onOpenCalendar={onOpenCalendar}
           onOpenTestMode={onOpenTestMode}
           onOpenSyllabus={onOpenSyllabusTopic ? () => onOpenSyllabusTopic('panchayati-raj-local-gov') : undefined}
+          onOpenNotesHistory={onOpenNotesHistory}
         />
       ) : (
         <>
@@ -615,19 +719,35 @@ export const SelfTeachCurriculum: React.FC<SelfTeachCurriculumProps> = ({
                           {mod.requiredReadings.map((reading, rIdx) => (
                             <div
                               key={rIdx}
-                              className="p-2.5 bg-slate-900 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs"
+                              onClick={() => setActiveReadingModal({
+                                book: reading.book,
+                                chapters: reading.chapters,
+                                priority: reading.priority,
+                                moduleTitle: mod.title,
+                                targetExam: mod.targetExam
+                              })}
+                              className="p-2.5 bg-slate-900 hover:bg-slate-850 hover:border-amber-500/50 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs cursor-pointer transition-all group"
+                              title="Click to view chapter notes, reading roadmap & bookmark options"
                             >
                               <div className="space-y-0.5">
-                                <span className="font-bold text-slate-200 block">{reading.book}</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-bold text-slate-200 group-hover:text-amber-300 transition-colors block">{reading.book}</span>
+                                  <ChevronRight className="w-3 h-3 text-slate-500 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-transform" />
+                                </div>
                                 <span className="text-slate-400">{reading.chapters}</span>
                               </div>
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold self-start sm:self-auto ${
-                                reading.priority === 'Must Read'
-                                  ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                                  : 'bg-slate-800 text-slate-400'
-                              }`}>
-                                {reading.priority}
-                              </span>
+                              <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  reading.priority === 'Must Read'
+                                    ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                                    : 'bg-slate-800 text-slate-400'
+                                }`}>
+                                  {reading.priority}
+                                </span>
+                                <span className="text-[10px] text-amber-400 font-semibold group-hover:underline">
+                                  View Notes →
+                                </span>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -641,20 +761,56 @@ export const SelfTeachCurriculum: React.FC<SelfTeachCurriculumProps> = ({
                         </div>
 
                         <div className="space-y-2">
-                          {mod.dailyBreakdown.map((day) => (
-                            <div
-                              key={day.dayNumber}
-                              className="p-3 bg-slate-950/80 rounded-xl border border-slate-800/80 text-xs space-y-1"
-                            >
-                              <div className="flex items-center justify-between text-amber-400 font-bold text-[11px]">
-                                <span>Day {day.dayNumber}: {day.focus}</span>
-                                <span className="text-slate-500 font-normal">Target PYQs: {day.pyqTarget}</span>
+                          {mod.dailyBreakdown.map((day) => {
+                            const dayKey = `${mod.id}-day-${day.dayNumber}`;
+                            const isDayDone = Boolean(completedDays[dayKey]);
+                            return (
+                              <div
+                                key={day.dayNumber}
+                                className={`p-3 rounded-xl border text-xs space-y-1.5 transition-colors ${
+                                  isDayDone
+                                    ? 'bg-emerald-950/20 border-emerald-500/40 text-slate-300'
+                                    : 'bg-slate-950/80 border-slate-800/80'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between text-amber-400 font-bold text-[11px] flex-wrap gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleDayCompleted(dayKey)}
+                                      className="cursor-pointer text-slate-400 hover:text-amber-300 transition-colors"
+                                      title={isDayDone ? 'Mark as incomplete' : 'Mark day task complete'}
+                                    >
+                                      {isDayDone ? (
+                                        <CheckSquare className="w-4 h-4 text-emerald-400" />
+                                      ) : (
+                                        <Square className="w-4 h-4 text-slate-500 hover:text-slate-300" />
+                                      )}
+                                    </button>
+                                    <span className={isDayDone ? 'line-through text-slate-400' : ''}>
+                                      Day {day.dayNumber}: {day.focus}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-slate-500 font-normal">Target: {day.pyqTarget} PYQs</span>
+                                    {onOpenTestMode && (
+                                      <button
+                                        type="button"
+                                        onClick={onOpenTestMode}
+                                        className="px-2 py-0.5 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-[10px] font-bold cursor-pointer transition-colors"
+                                        title="Practice target PYQs in Test Mode"
+                                      >
+                                        Practice PYQs →
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                                <p className={`leading-relaxed pl-6 ${isDayDone ? 'text-slate-400' : 'text-slate-300'}`}>
+                                  {day.actionableTask}
+                                </p>
                               </div>
-                              <p className="text-slate-300 leading-relaxed pl-1">
-                                {day.actionableTask}
-                              </p>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
 
@@ -737,6 +893,20 @@ export const SelfTeachCurriculum: React.FC<SelfTeachCurriculumProps> = ({
                               <ArrowRight className="w-3.5 h-3.5" />
                             </button>
                           )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleBookmarkModule(mod)}
+                            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border ${
+                              bookmarkedModuleIds.includes(mod.id)
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                : 'bg-slate-800 hover:bg-slate-750 text-slate-300 border-slate-700'
+                            }`}
+                            title="Bookmark this curriculum module into universal bookmarks"
+                          >
+                            <Bookmark className={`w-3.5 h-3.5 ${bookmarkedModuleIds.includes(mod.id) ? 'fill-amber-400 text-amber-400' : 'text-slate-400'}`} />
+                            <span>{bookmarkedModuleIds.includes(mod.id) ? 'Unit Bookmarked' : 'Bookmark Unit'}</span>
+                          </button>
 
                           <button
                             type="button"
@@ -828,13 +998,27 @@ export const SelfTeachCurriculum: React.FC<SelfTeachCurriculumProps> = ({
                 return (
                   <div
                     key={sIdx}
-                    className={`p-3 rounded-xl border text-xs space-y-1 ${
+                    onClick={() => {
+                      if (isCore) {
+                        setCurriculumViewMode('knowledge-vault');
+                        setCalendarToast('Switched to Curriculum Knowledge Vault for Core study!');
+                        setTimeout(() => setCalendarToast(null), 3000);
+                      } else if (isRaj) {
+                        if (onOpenSyllabusTopic) {
+                          onOpenSyllabusTopic('RAJASTHAN');
+                        }
+                      } else if (onOpenTestMode) {
+                        onOpenTestMode();
+                      }
+                    }}
+                    className={`p-3 rounded-xl border text-xs space-y-1.5 transition-all cursor-pointer group hover:scale-[1.01] hover:border-amber-400/60 ${
                       isCore
-                        ? 'bg-slate-950/80 border-amber-500/25'
+                        ? 'bg-slate-950/80 border-amber-500/25 hover:bg-amber-950/20'
                         : isRaj
-                        ? 'bg-slate-950/80 border-emerald-500/25'
-                        : 'bg-slate-950/80 border-indigo-500/25'
+                        ? 'bg-slate-950/80 border-emerald-500/25 hover:bg-emerald-950/20'
+                        : 'bg-slate-950/80 border-indigo-500/25 hover:bg-indigo-950/20'
                     }`}
+                    title="Click to launch session activity"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-200">{slot.timeSlot}</span>
@@ -851,7 +1035,13 @@ export const SelfTeachCurriculum: React.FC<SelfTeachCurriculumProps> = ({
                       </span>
                     </div>
 
-                    <div className="font-semibold text-slate-100">{slot.activity}</div>
+                    <div className="font-semibold text-slate-100 flex items-center justify-between">
+                      <span>{slot.activity}</span>
+                      <span className="text-[10px] text-amber-400 opacity-80 group-hover:opacity-100 flex items-center gap-0.5">
+                        <span>Launch</span>
+                        <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                      </span>
+                    </div>
                     <p className="text-[11px] text-slate-400">{slot.description}</p>
                   </div>
                 );
@@ -885,6 +1075,101 @@ export const SelfTeachCurriculum: React.FC<SelfTeachCurriculumProps> = ({
         </div>
       </div>
         </>
+      )}
+
+      {/* Interactive Standard Book & Chapter Reader Modal */}
+      {activeReadingModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 sm:p-7 space-y-5 shadow-2xl relative">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4">
+              <div>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                  Standard Reading Reference • {activeReadingModal.priority}
+                </span>
+                <h3 className="font-serif text-lg sm:text-xl font-bold text-white mt-1.5">
+                  {activeReadingModal.book}
+                </h3>
+                <p className="text-xs text-amber-400/90 font-medium mt-0.5">
+                  Assigned Chapters: {activeReadingModal.chapters}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveReadingModal(null)}
+                className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800/80 space-y-2">
+                <div className="font-bold text-slate-200 flex items-center gap-1.5">
+                  <Target className="w-4 h-4 text-emerald-400" />
+                  <span>Syllabus Target & Workload Focus:</span>
+                </div>
+                <p className="text-slate-300 leading-relaxed">
+                  Focus strictly on conceptual principles, landmark case laws/amendments, and chronological transitions in {activeReadingModal.moduleTitle}.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800/80 space-y-2">
+                <div className="font-bold text-slate-200 flex items-center gap-1.5">
+                  <BookMarked className="w-4 h-4 text-amber-400" />
+                  <span>3-Pass Self-Study Reading Method:</span>
+                </div>
+                <div className="space-y-1.5 text-slate-300">
+                  <div className="flex items-start gap-2">
+                    <span className="px-1.5 py-0.2 rounded bg-slate-800 text-[10px] font-mono text-amber-300">Pass 1</span>
+                    <span>Bird&apos;s-eye scan: read headings, summaries & tables without underlining.</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="px-1.5 py-0.2 rounded bg-slate-800 text-[10px] font-mono text-emerald-300">Pass 2</span>
+                    <span>Deep read: highlight constitutional articles, factual triggers & definitions.</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="px-1.5 py-0.2 rounded bg-slate-800 text-[10px] font-mono text-indigo-300">Pass 3</span>
+                    <span>Consolidate into 1 index card or bullet points in the app&apos;s Offline PDF Notes.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-800 flex-wrap">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleBookmarkReading(activeReadingModal);
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/35 text-amber-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Bookmark className="w-3.5 h-3.5" />
+                  <span>Bookmark Reading</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleLogReadingToHistory(activeReadingModal);
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border border-slate-700"
+                >
+                  <FolderClock className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Log in History</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveReadingModal(null)}
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Compass, Award, PenTool, BrainCircuit, BookmarkCheck, MapPin, Globe, GraduationCap, Search, Calendar } from 'lucide-react';
+import { BookOpen, Compass, Award, PenTool, BrainCircuit, BookmarkCheck, MapPin, Globe, GraduationCap, Search, Calendar, FolderClock, Library } from 'lucide-react';
 import { LanguageMedium, UserProfile } from '../types';
 
 interface NavbarProps {
@@ -27,6 +27,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'dashboard', label: 'Roadmap', icon: Compass },
     { id: 'curriculum', label: 'Curriculum', icon: GraduationCap },
     { id: 'syllabus', label: 'Syllabus', icon: BookOpen },
+    { id: 'resources', label: 'Resources', icon: Library },
+    { id: 'notes-history', label: 'Notes & Vault', icon: FolderClock },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
     { id: 'test-mode', label: 'Test Mode', icon: Award },
     { id: 'mentor', label: 'Mentor AI', icon: BrainCircuit },

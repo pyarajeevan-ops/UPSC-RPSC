@@ -19,6 +19,7 @@ import {
   Calendar,
   CalendarCheck,
   Library,
+  FolderClock,
 } from 'lucide-react';
 import { UserProfile, LanguageMedium, TopicLesson, DayStudyLog } from '../types';
 import { OFFICIAL_SOURCES_DIRECTORY, SYLLABUS_TOPICS } from '../data/mockSyllabus';
@@ -30,6 +31,16 @@ import { ConsistentAspirantStreak, calculateStreakStats } from './ConsistentAspi
 import { WeeklyPerformanceReport } from './WeeklyPerformanceReport';
 import { TodayStudyHoursSummary } from './TodayStudyHoursSummary';
 import { DailySessionNotes } from './DailySessionNotes';
+import {
+  OfficialSourceModal,
+  DETAILED_OFFICIAL_SOURCES,
+  OfficialSourceDetail
+} from './OfficialSourcesModal';
+import {
+  OverlapSubjectModal,
+  OVERLAP_SUBJECTS_CATALOG,
+  OverlapSubjectDetail
+} from './OverlapSubjectModal';
 
 interface DashboardViewProps {
   userProfile: UserProfile;
@@ -75,6 +86,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const streakStats = calculateStreakStats(dayLogs, userProfile.studyHours || 8);
 
+  // Interactive Modals State
+  const [isOfficialSourceModalOpen, setIsOfficialSourceModalOpen] = React.useState<boolean>(false);
+  const [selectedOfficialSource, setSelectedOfficialSource] = React.useState<OfficialSourceDetail | null>(null);
+
+  const [isOverlapModalOpen, setIsOverlapModalOpen] = React.useState<boolean>(false);
+  const [selectedOverlapSubject, setSelectedOverlapSubject] = React.useState<OverlapSubjectDetail | null>(null);
+
+  const handleOpenSourceDetail = (sourceName: string) => {
+    const found = DETAILED_OFFICIAL_SOURCES.find((s) => s.name === sourceName) || DETAILED_OFFICIAL_SOURCES[0];
+    setSelectedOfficialSource(found);
+    setIsOfficialSourceModalOpen(true);
+  };
+
+  const handleOpenSubjectDetail = (subjectId: string) => {
+    const found = OVERLAP_SUBJECTS_CATALOG.find((s) => s.id === subjectId) || OVERLAP_SUBJECTS_CATALOG[0];
+    setSelectedOverlapSubject(found);
+    setIsOverlapModalOpen(true);
+  };
+
   return (
     <div className="space-y-8 pb-12">
       {/* Daily Study Goal Reached Notification & Toast Alert */}
@@ -117,38 +147,75 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </p>
 
           {/* Quick Metrics Strip */}
-          <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-slate-300 pt-4 border-t border-slate-800/80">
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-500">Target:</span>
-              <span className="font-semibold text-amber-300">{userProfile.targetExam}</span>
-            </div>
-            <span className="text-slate-600">·</span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-500">Daily Hours:</span>
-              <span className="font-semibold text-amber-300 tabular-nums">{userProfile.studyHours}h/day</span>
-            </div>
-            <span className="text-slate-600">·</span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-500">Consistency:</span>
-              <span className="font-semibold text-amber-400 flex items-center gap-1 tabular-nums">
+          <div className="mt-6 flex flex-wrap items-center gap-3 text-xs text-slate-300 pt-4 border-t border-slate-800/80">
+            <button
+              type="button"
+              onClick={onOpenDiagnostic}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-amber-500/40 text-left transition-all cursor-pointer group"
+              title="Click to recalibrate your target exam"
+            >
+              <span className="text-slate-400 group-hover:text-slate-300">Target:</span>
+              <span className="font-semibold text-amber-300 group-hover:text-amber-200">{userProfile.targetExam}</span>
+              <ChevronRight className="w-3 h-3 text-slate-500 group-hover:text-amber-400 opacity-60 group-hover:opacity-100" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onSelectTab('calendar')}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-amber-500/40 text-left transition-all cursor-pointer group"
+              title="Click to adjust your daily timetable"
+            >
+              <span className="text-slate-400 group-hover:text-slate-300">Daily Hours:</span>
+              <span className="font-semibold text-amber-300 group-hover:text-amber-200 tabular-nums">{userProfile.studyHours}h/day</span>
+              <ChevronRight className="w-3 h-3 text-slate-500 group-hover:text-amber-400 opacity-60 group-hover:opacity-100" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onSelectTab('calendar')}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-amber-500/40 text-left transition-all cursor-pointer group"
+              title="View full consistency streak logs"
+            >
+              <span className="text-slate-400 group-hover:text-slate-300">Consistency:</span>
+              <span className="font-semibold text-amber-400 flex items-center gap-1 tabular-nums group-hover:text-amber-300">
                 <Flame className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                 {streakStats.currentStreak}d Streak
               </span>
-            </div>
-            <span className="text-slate-600">·</span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-500">Medium:</span>
+              <ChevronRight className="w-3 h-3 text-slate-500 group-hover:text-amber-400 opacity-60 group-hover:opacity-100" />
+            </button>
+
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/50 border border-slate-800 text-left">
+              <span className="text-slate-400">Medium:</span>
               <span className="font-semibold text-slate-200">{userProfile.medium}</span>
-            </div>
-            <span className="text-slate-600">·</span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-500">Error Log:</span>
-              <span className={`font-semibold tabular-nums ${mistakeCount > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                {mistakeCount} entries
-              </span>
             </div>
 
             <button
+              type="button"
+              onClick={() => onSelectTab('mistakes')}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-rose-500/40 text-left transition-all cursor-pointer group"
+              title="Open your Error Notebook to review classified mistakes"
+            >
+              <span className="text-slate-400 group-hover:text-slate-300">Error Log:</span>
+              <span className={`font-semibold tabular-nums ${mistakeCount > 0 ? 'text-rose-400 group-hover:text-rose-300' : 'text-emerald-400'}`}>
+                {mistakeCount} entries
+              </span>
+              <ChevronRight className="w-3 h-3 text-slate-500 group-hover:text-rose-400 opacity-60 group-hover:opacity-100" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onSelectTab('resources')}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-amber-500/40 text-left transition-all cursor-pointer group"
+              title="Open 24 Standard Books, 20 Portals & 8 Cheat Sheets"
+            >
+              <Library className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-slate-400 group-hover:text-slate-300">Vetted Resources:</span>
+              <span className="font-semibold text-amber-300 group-hover:text-amber-200">24 Books • 20 Portals • 8 Cheat Sheets</span>
+              <ChevronRight className="w-3 h-3 text-slate-500 group-hover:text-amber-400 opacity-60 group-hover:opacity-100" />
+            </button>
+
+            <button
+              type="button"
               onClick={onOpenDiagnostic}
               className="ml-auto text-amber-400 hover:text-amber-300 underline font-medium text-xs cursor-pointer"
             >
@@ -199,6 +266,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <WeeklyPerformanceReport
         userProfile={userProfile}
         dayLogs={dayLogs}
+        onSelectTab={onSelectTab}
+        onOpenOverlapSubject={handleOpenSubjectDetail}
       />
 
       {/* Visual Component: Daily Study Hours vs Target & Syllabus Topics Progress */}
@@ -249,6 +318,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
 
             <button
+              onClick={() => onSelectTab('notes-history')}
+              className="px-3.5 py-1.5 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/40 text-blue-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto shrink-0 shadow-xs"
+            >
+              <FolderClock className="w-3.5 h-3.5 text-blue-400" />
+              <span>Offline Notes & History</span>
+              <span className="px-1.5 py-0.2 bg-blue-950 text-[10px] rounded text-blue-300 border border-blue-500/30">
+                PDF Vault
+              </span>
+            </button>
+
+            <button
               onClick={() => onSelectTab('curriculum')}
               className="px-3.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto shrink-0 shadow-xs"
             >
@@ -283,18 +363,41 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 One integrated set of notes for Polity, History, Geography, Economy, Environment, and S&T. Focus on conceptual clarity, constitutional articles, and inter-subject linkages.
               </p>
               <div className="mt-4 space-y-1.5 text-xs text-slate-300">
-                <div className="flex items-center justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">Indian Polity & Governance</span>
-                  <span className="text-emerald-400 font-medium">85% Overlap</span>
-                </div>
-                <div className="flex items-center justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">Ancient & Modern History</span>
-                  <span className="text-emerald-400 font-medium">75% Overlap</span>
-                </div>
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-slate-400">Physical & World Geography</span>
-                  <span className="text-emerald-400 font-medium">65% Overlap</span>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => handleOpenSubjectDetail('polity-governance')}
+                  className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-800/80 transition-colors border-b border-slate-800/60 cursor-pointer text-left group"
+                >
+                  <span className="text-slate-300 group-hover:text-amber-300 font-medium">Indian Polity & Governance</span>
+                  <div className="flex items-center gap-1 text-emerald-400 font-medium">
+                    <span>85% Overlap</span>
+                    <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleOpenSubjectDetail('ancient-modern-history')}
+                  className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-800/80 transition-colors border-b border-slate-800/60 cursor-pointer text-left group"
+                >
+                  <span className="text-slate-300 group-hover:text-amber-300 font-medium">Ancient & Modern History</span>
+                  <div className="flex items-center gap-1 text-emerald-400 font-medium">
+                    <span>75% Overlap</span>
+                    <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleOpenSubjectDetail('physical-world-geography')}
+                  className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-800/80 transition-colors cursor-pointer text-left group"
+                >
+                  <span className="text-slate-300 group-hover:text-amber-300 font-medium">Physical & World Geography</span>
+                  <div className="flex items-center gap-1 text-emerald-400 font-medium">
+                    <span>65% Overlap</span>
+                    <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </button>
               </div>
             </div>
 
@@ -319,18 +422,41 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 Dedicated state static GK, Rajasthan Economic Review, Budget, DIPR Sujas schemes, Forts & Architecture, Aravalli peak elevations, and administrative institutions (RPSC, Lokayukta).
               </p>
               <div className="mt-4 space-y-1.5 text-xs text-slate-300">
-                <div className="flex items-center justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">Rajasthan Geography & Minerals</span>
-                  <span className="text-amber-400 font-medium">State Specific</span>
-                </div>
-                <div className="flex items-center justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">Art, Culture & Hill Forts</span>
-                  <span className="text-amber-400 font-medium">State Specific</span>
-                </div>
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-slate-400">Rajasthan Economic Review & Schemes</span>
-                  <span className="text-amber-400 font-medium">State Specific</span>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => handleOpenSubjectDetail('rajasthan-minerals-economy')}
+                  className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-800/80 transition-colors border-b border-slate-800/60 cursor-pointer text-left group"
+                >
+                  <span className="text-slate-300 group-hover:text-amber-300 font-medium">Rajasthan Geography & Minerals</span>
+                  <div className="flex items-center gap-1 text-amber-400 font-medium">
+                    <span>State Specific</span>
+                    <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleOpenSubjectDetail('art-culture-forts')}
+                  className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-800/80 transition-colors border-b border-slate-800/60 cursor-pointer text-left group"
+                >
+                  <span className="text-slate-300 group-hover:text-amber-300 font-medium">Art, Culture & Hill Forts</span>
+                  <div className="flex items-center gap-1 text-amber-400 font-medium">
+                    <span>State Specific</span>
+                    <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleOpenSubjectDetail('rajasthan-economic-schemes')}
+                  className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-800/80 transition-colors cursor-pointer text-left group"
+                >
+                  <span className="text-slate-300 group-hover:text-amber-300 font-medium">Rajasthan Economic Review & Schemes</span>
+                  <div className="flex items-center gap-1 text-amber-400 font-medium">
+                    <span>State Specific</span>
+                    <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </button>
               </div>
             </div>
 
@@ -355,18 +481,44 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 Elimination practice under timed conditions. Rigorous logging into the 8 error classifications (Misreading, Factual, Overthinking, etc.) and spaced repetition reviews.
               </p>
               <div className="mt-4 space-y-1.5 text-xs text-slate-300">
-                <div className="flex items-center justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">UPSC Mode Simulator</span>
-                  <span className="text-slate-300 font-medium">Analytical / 4-Option</span>
-                </div>
-                <div className="flex items-center justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">RPSC RAS Simulator</span>
-                  <span className="text-slate-300 font-medium">Factual / 5-Option OMR</span>
-                </div>
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-slate-400">Active Error Journal</span>
-                  <span className="text-rose-400 font-medium">{mistakeCount} to Cure</span>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => onSelectTab('test-mode')}
+                  className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-800/80 transition-colors border-b border-slate-800/60 cursor-pointer text-left group"
+                  title="Launch Analytical 4-Option UPSC CSE Prelims Simulator"
+                >
+                  <span className="text-slate-300 group-hover:text-amber-300 font-medium">UPSC Mode Simulator</span>
+                  <div className="flex items-center gap-1 text-amber-400 font-medium">
+                    <span>4-Option Analytical</span>
+                    <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onSelectTab('test-mode')}
+                  className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-800/80 transition-colors border-b border-slate-800/60 cursor-pointer text-left group"
+                  title="Launch Factual 5-Option OMR RPSC RAS Simulator"
+                >
+                  <span className="text-slate-300 group-hover:text-amber-300 font-medium">RPSC RAS Simulator</span>
+                  <div className="flex items-center gap-1 text-amber-400 font-medium">
+                    <span>5-Option OMR</span>
+                    <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onSelectTab('mistakes')}
+                  className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-800/80 transition-colors cursor-pointer text-left group"
+                  title="Open Error Journal and 8-Trap Taxonomy"
+                >
+                  <span className="text-slate-300 group-hover:text-rose-300 font-medium">Active Error Journal</span>
+                  <div className="flex items-center gap-1 text-rose-400 font-medium">
+                    <span>{mistakeCount} to Cure</span>
+                    <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </button>
               </div>
             </div>
 
@@ -626,19 +778,40 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
           {OFFICIAL_SOURCES_DIRECTORY.map((src) => (
-            <a
+            <button
               key={src.name}
-              href={src.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 bg-slate-900 border border-slate-800/80 rounded-lg hover:border-slate-700 text-slate-300 hover:text-amber-300 transition-colors flex items-center justify-between group"
+              type="button"
+              onClick={() => handleOpenSourceDetail(src.name)}
+              className="p-2.5 bg-slate-900 border border-slate-800/80 rounded-xl hover:border-amber-500/50 hover:bg-slate-800/80 text-slate-300 hover:text-amber-300 transition-all flex items-center justify-between group cursor-pointer text-left shadow-xs"
+              title={`Read official mandate & high-yield sections for ${src.name}`}
             >
-              <span className="truncate">{src.name}</span>
-              <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-amber-400 shrink-0 ml-1" />
-            </a>
+              <span className="truncate text-xs font-medium">{src.name}</span>
+              <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-400 shrink-0 ml-1.5" />
+            </button>
           ))}
         </div>
       </div>
+
+      {/* Interactive Official Source Deep-Inspection Modal */}
+      <OfficialSourceModal
+        isOpen={isOfficialSourceModalOpen}
+        onClose={() => setIsOfficialSourceModalOpen(false)}
+        initialSource={selectedOfficialSource}
+      />
+
+      {/* Interactive 70:20:10 Overlap Subject Exploration Modal */}
+      <OverlapSubjectModal
+        isOpen={isOverlapModalOpen}
+        onClose={() => setIsOverlapModalOpen(false)}
+        subjectDetail={selectedOverlapSubject}
+        onExploreSyllabusTopic={(topicId) => {
+          onSelectTopic(topicId);
+          onSelectTab('syllabus');
+        }}
+        onExploreKnowledgeVault={() => {
+          onSelectTab('curriculum');
+        }}
+      />
     </div>
   );
 };

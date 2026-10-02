@@ -9,6 +9,8 @@ import { SpacedRevisionView } from './components/SpacedRevisionView';
 import { RajasthanVaultView } from './components/RajasthanVaultView';
 import { SelfTeachCurriculum } from './components/SelfTeachCurriculum';
 import { StudyCalendarView } from './components/StudyCalendarView';
+import { OfflineNotesAndHistoryView } from './components/OfflineNotesAndHistoryView';
+import { ResourcesLibraryView } from './components/ResourcesLibraryView';
 import { DiagnosticModal } from './components/DiagnosticModal';
 import { CommandPalette } from './components/CommandPalette';
 import { ArrowLeft, Keyboard, HelpCircle, X, Compass, GraduationCap, BookOpen, Calendar, Award, BrainCircuit } from 'lucide-react';
@@ -138,6 +140,11 @@ export default function App() {
         case '9':
           e.preventDefault();
           navigateToTab('rajasthan-vault');
+          break;
+        case 'n':
+        case 'N':
+          e.preventDefault();
+          navigateToTab('notes-history');
           break;
         case 'c':
         case 'C':
@@ -361,6 +368,9 @@ export default function App() {
             onOpenTestMode={() => {
               navigateToTab('test-mode');
             }}
+            onOpenNotesHistory={() => {
+              navigateToTab('notes-history');
+            }}
           />
         )}
 
@@ -371,6 +381,26 @@ export default function App() {
             onSelectTopicId={setSelectedTopicId}
             language={language}
             userProfile={userProfile}
+          />
+        )}
+
+        {activeTab === 'resources' && (
+          <ResourcesLibraryView
+            language={language}
+            userProfile={userProfile}
+            onNavigateToTab={navigateToTab}
+            onSelectTopicLesson={(lessonId) => {
+              setSelectedTopicId(lessonId);
+              navigateToTab('syllabus');
+            }}
+          />
+        )}
+
+        {activeTab === 'notes-history' && (
+          <OfflineNotesAndHistoryView
+            language={language}
+            userProfile={userProfile}
+            onNavigateToTab={navigateToTab}
           />
         )}
 
@@ -511,6 +541,10 @@ export default function App() {
                 <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                   <span className="text-slate-300">Rajasthan Layer</span>
                   <kbd className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-amber-300 font-mono text-[11px]">9</kbd>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span className="text-blue-300 font-medium">Notes & Vault</span>
+                  <kbd className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-blue-300 font-mono text-[11px]">N</kbd>
                 </div>
                 <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                   <span className="text-slate-300">Previous View</span>
